@@ -40,9 +40,22 @@ api.interceptors.response.use(
 
 // ─── Auth ──────────────────────────────────────────────────
 export const authAPI = {
+  // Connexion / Déconnexion
   login:  (credentials) => api.post('/auth/login',  credentials),
   logout: ()            => api.post('/auth/logout'),
   me:     ()            => api.get('/auth/me'),
+  
+  // ─── NOUVEAU : Inscription ───
+  register: (userData) => api.post('/auth/register', userData),
+  
+  // ─── NOUVEAU : Mot de passe oublié ───
+  forgotPassword: (data) => api.post('/auth/forgot-password', data),
+  
+  // ─── NOUVEAU : Vérifier le code de réinitialisation ───
+  verifyResetCode: (data) => api.post('/auth/verify-reset-code', data),
+  
+  // ─── NOUVEAU : Réinitialiser le mot de passe ───
+  resetPassword: (data) => api.post('/auth/reset-password', data),
 }
 
 // ─── Enseignants ───────────────────────────────────────────
