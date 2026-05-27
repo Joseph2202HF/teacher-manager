@@ -1,5 +1,6 @@
 /**
  * Page Liste des enseignants — CRUD complet
+ * Design ultra-moderne compact pour PC
  */
 
 import { useEffect, useState } from 'react'
@@ -11,47 +12,38 @@ import {
   ChevronUp, ChevronDown, Users, AlertTriangle, Database
 } from 'lucide-react'
 
-/* Confirmation modal */
 function DeleteModal({ name, onConfirm, onCancel, loading }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#030508]/80 backdrop-blur-md">
-      <div 
-        className="w-full max-w-md p-8 rounded-3xl border border-white/[0.06] animate-scale-in"
-        style={{
-          background: 'linear-gradient(135deg, rgba(15,20,30,0.95) 0%, rgba(10,15,25,0.98) 100%)',
-          boxShadow: '0 0 0 1px rgba(251,113,133,0.1), 0 25px 60px -12px rgba(0,0,0,0.5), 0 0 80px rgba(251,113,133,0.08)',
-        }}
-      >
-        <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-500/20 to-rose-600/10 border border-rose-500/30 flex items-center justify-center mb-6 mx-auto">
-          <div className="absolute inset-0 rounded-2xl bg-rose-500/20 blur-xl" />
-          <AlertTriangle size={28} className="text-rose-400 relative z-10" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="w-full max-w-sm rounded-2xl border border-white/[0.08] p-7"
+        style={{ background: 'rgba(12,16,26,0.98)', boxShadow: '0 20px 60px rgba(0,0,0,0.6)' }}>
+        <div className="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-500/25 flex items-center justify-center mb-5 mx-auto">
+          <AlertTriangle size={20} className="text-rose-400" />
         </div>
-        <h3 className="font-display font-bold text-xl text-center text-white mb-3">
+        <h3 className="font-semibold text-base text-center text-white mb-2">
           Supprimer l&apos;enseignant
         </h3>
-        <p className="text-[#6b7a90] text-sm text-center mb-8 leading-relaxed">
-          Voulez-vous vraiment supprimer <span className="text-white font-semibold">{name}</span> ?
-          <br />Cette action est irreversible.
+        <p className="text-[#5a6478] text-xs text-center mb-6 leading-relaxed">
+          Voulez-vous vraiment supprimer{' '}
+          <span className="text-[#8892a4] font-medium">{name}</span> ?
+          Cette action est irréversible.
         </p>
-        <div className="flex gap-4">
-          <button 
-            onClick={onCancel} 
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
             disabled={loading}
-            className="flex-1 h-12 rounded-xl font-semibold text-sm text-[#8892a4] bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] hover:text-white transition-all duration-200 disabled:opacity-50"
+            className="flex-1 h-9 rounded-lg text-xs font-medium text-[#6b7a90] bg-white/[0.04] border border-white/[0.07] hover:bg-white/[0.07] hover:text-white transition-colors disabled:opacity-50"
           >
             Annuler
           </button>
           <button
             onClick={onConfirm}
             disabled={loading}
-            className="flex-1 h-12 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-400 hover:to-rose-500 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
-            style={{ boxShadow: '0 0 30px rgba(251,113,133,0.3)' }}
+            className="flex-1 h-9 rounded-lg text-xs font-medium text-white bg-rose-500/90 hover:bg-rose-500 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
           >
-            {loading ? (
-              <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-            ) : (
-              <Trash2 size={16} />
-            )}
+            {loading
+              ? <div className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+              : <Trash2 size={13} />}
             Supprimer
           </button>
         </div>
@@ -93,22 +85,21 @@ export default function Enseignants() {
     }
     result.sort((a, b) => {
       let av = a[sort.key], bv = b[sort.key]
-      if (typeof av === 'string') av = av.toLowerCase(), bv = bv.toLowerCase()
+      if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase() }
       return sort.dir === 'asc' ? (av > bv ? 1 : -1) : (av < bv ? 1 : -1)
     })
     setFiltered(result)
   }, [list, search, sort])
 
-  const toggleSort = (key) => {
+  const toggleSort = (key) =>
     setSort((s) => ({ key, dir: s.key === key && s.dir === 'asc' ? 'desc' : 'asc' }))
-  }
 
   const handleDelete = async () => {
     setDeleting(true)
     try {
       await enseignantAPI.delete(toDelete.numEns)
       setList((l) => l.filter((e) => e.numEns !== toDelete.numEns))
-      show(`${toDelete.nom} supprime avec succes.`)
+      show(`${toDelete.nom} supprimé avec succès.`)
     } catch {
       show('Erreur lors de la suppression.', 'error')
     } finally {
@@ -118,14 +109,17 @@ export default function Enseignants() {
   }
 
   const SortIcon = ({ col }) => {
-    if (sort.key !== col) return <ChevronUp size={14} className="opacity-30" />
+    if (sort.key !== col) return <ChevronUp size={12} className="opacity-20" />
     return sort.dir === 'asc'
-      ? <ChevronUp size={14} className="text-cyan-400" />
-      : <ChevronDown size={14} className="text-cyan-400" />
+      ? <ChevronUp size={12} className="text-cyan-400" />
+      : <ChevronDown size={12} className="text-cyan-400" />
   }
 
+  const totalHeures  = filtered.reduce((acc, e) => acc + Number(e.nbheures), 0)
+  const totalSalaire = filtered.reduce((acc, e) => acc + Number(e.salaire), 0)
+
   return (
-    <div className="min-h-screen w-full px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
+    <div className="min-h-screen w-full px-6 py-7">
       <ToastContainer />
       {toDelete && (
         <DeleteModal
@@ -136,129 +130,125 @@ export default function Enseignants() {
         />
       )}
 
-      {/* Container ULTRA LARGE - 98% viewport avec petites marges */}
-      <div className="w-full max-w-[90vw] mx-auto space-y-8">
+      <div className="max-w-[1400px] mx-auto space-y-5">
 
-        {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-6">
-          <div className="flex items-center gap-5">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-indigo-500 to-cyan-500 blur-xl opacity-40" />
-              <div 
-                className="relative w-16 h-16 rounded-2xl flex items-center justify-center border border-indigo-500/30"
-                style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(0,240,255,0.1) 100%)' }}
-              >
-                <Users size={28} className="text-indigo-400" />
-              </div>
+        {/* ── Header ── */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3.5">
+            <div className="w-9 h-9 rounded-xl bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center">
+              <Users size={17} className="text-indigo-400" />
             </div>
             <div>
-              <h1 className="font-display text-4xl font-bold tracking-tight bg-gradient-to-r from-white via-indigo-100 to-white bg-clip-text text-transparent">
-                Enseignants
-              </h1>
-              <p className="text-[#6b7a90] text-base mt-1.5 flex items-center gap-2">
-                <Database size={14} className="text-cyan-500/70" />
-                {filtered.length} enregistrement{filtered.length !== 1 ? 's' : ''} au total
+              <h1 className="text-xl font-semibold text-white tracking-tight">Enseignants</h1>
+              <p className="text-[10px] text-[#4d5a6e] flex items-center gap-1 mt-0.5">
+                <Database size={10} className="text-cyan-500/60" />
+                {filtered.length} enregistrement{filtered.length !== 1 ? 's' : ''}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={load} 
-              disabled={loading} 
-              className="w-14 h-14 rounded-xl flex items-center justify-center bg-white/[0.03] border border-white/[0.06] text-[#6b7a90] hover:text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/20 transition-all duration-200 disabled:opacity-50"
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={load}
+              disabled={loading}
+              className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/[0.03] border border-white/[0.07] text-[#5a6478] hover:text-cyan-400 hover:border-cyan-500/30 transition-colors disabled:opacity-40"
+              title="Rafraîchir"
             >
-              <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
+              <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
             </button>
-            <Link 
-              to="/enseignants/ajouter" 
-              className="h-14 px-8 rounded-xl font-semibold text-base text-[#030508] flex items-center gap-3 transition-all duration-300 hover:-translate-y-0.5"
-              style={{
-                background: 'linear-gradient(135deg, #00f0ff 0%, #00c8d4 50%, #00a8b8 100%)',
-                boxShadow: '0 0 30px rgba(0,240,255,0.3), 0 0 60px rgba(0,240,255,0.1)',
-              }}
+            <Link
+              to="/enseignants/ajouter"
+              className="h-9 px-4 rounded-xl text-xs font-semibold text-[#030508] flex items-center gap-2 transition-opacity hover:opacity-90"
+              style={{ background: 'linear-gradient(135deg,#00e8f5,#00b8c8)' }}
             >
-              <UserPlus size={20} />
+              <UserPlus size={14} />
               Ajouter un enseignant
             </Link>
           </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative max-w-xl">
-          <Search size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#4d5a6e]" />
+        {/* ── Summary cards ── */}
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: 'Total enseignants', value: filtered.length, suffix: '', color: 'indigo' },
+            { label: 'Total heures',       value: totalHeures,     suffix: 'h',  color: 'violet' },
+            { label: 'Masse salariale',    value: totalSalaire.toLocaleString('fr'), suffix: ' Ar', color: 'cyan' },
+          ].map(({ label, value, suffix, color }) => (
+            <div
+              key={label}
+              className="rounded-xl border border-white/[0.06] px-5 py-4"
+              style={{ background: 'rgba(12,16,26,0.7)' }}
+            >
+              <p className="text-[11px] text-[#4d5a6e] uppercase tracking-widest mb-1.5">{label}</p>
+              <p className={`text-2xl font-bold font-mono tracking-tight ${
+                color === 'cyan' ? 'text-cyan-300' :
+                color === 'violet' ? 'text-violet-300' : 'text-indigo-300'
+              }`}>
+                {value}<span className="text-sm font-normal opacity-60 ml-0.5">{suffix}</span>
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Search ── */}
+        <div className="relative w-80">
+          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#3d4a5c]" />
           <input
             type="text"
             placeholder="Rechercher par nom..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-14 pl-14 pr-5 rounded-xl bg-[#0a0f18]/80 border border-white/[0.06] text-white text-base placeholder-[#3d4a5c] transition-all duration-300 focus:outline-none focus:border-cyan-500/50 focus:bg-[#0c1220] focus:shadow-[0_0_0_3px_rgba(0,240,255,0.1),0_0_20px_rgba(0,240,255,0.1)] hover:border-white/10"
+            className="w-full h-9 pl-9 pr-4 rounded-xl bg-[#080c15] border border-white/[0.07] text-sm text-white placeholder-[#2e3a4a] focus:outline-none focus:border-cyan-500/40 focus:bg-[#0a0f1a] transition-colors"
           />
         </div>
 
-        {/* Table Card - FULL WIDTH */}
-        <div 
-          className="w-full rounded-3xl border border-white/[0.06] overflow-hidden"
-          style={{
-            background: 'linear-gradient(135deg, rgba(15,20,30,0.8) 0%, rgba(10,15,25,0.9) 100%)',
-            boxShadow: '0 0 0 1px rgba(0,240,255,0.05), 0 20px 50px -12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)',
-          }}
+        {/* ── Table ── */}
+        <div
+          className="w-full rounded-2xl border border-white/[0.06] overflow-hidden"
+          style={{ background: 'rgba(10,14,22,0.85)' }}
         >
-          {/* Top glow line */}
-          <div className="h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
-          
+          {/* top accent line */}
+          <div className="h-px bg-gradient-to-r from-transparent via-cyan-500/25 to-transparent" />
+
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/[0.04]">
-                  <th 
-                    onClick={() => toggleSort('numEns')}
-                    className="w-[8%] px-8 lg:px-12 py-6 text-left text-sm font-bold text-[#6b7a90] uppercase tracking-[0.15em] cursor-pointer select-none hover:text-cyan-400 transition-colors"
-                  >
-                    <span className="flex items-center gap-2">ID <SortIcon col="numEns" /></span>
-                  </th>
-                  <th 
-                    onClick={() => toggleSort('nom')}
-                    className="w-[22%] px-8 lg:px-12 py-6 text-left text-sm font-bold text-[#6b7a90] uppercase tracking-[0.15em] cursor-pointer select-none hover:text-cyan-400 transition-colors"
-                  >
-                    <span className="flex items-center gap-2">Nom complet <SortIcon col="nom" /></span>
-                  </th>
-                  <th 
-                    onClick={() => toggleSort('nbheures')}
-                    className="w-[12%] px-8 lg:px-12 py-6 text-left text-sm font-bold text-[#6b7a90] uppercase tracking-[0.15em] cursor-pointer select-none hover:text-cyan-400 transition-colors"
-                  >
-                    <span className="flex items-center gap-2">Heures <SortIcon col="nbheures" /></span>
-                  </th>
-                  <th 
-                    onClick={() => toggleSort('tauxhoraire')}
-                    className="w-[14%] px-8 lg:px-12 py-6 text-left text-sm font-bold text-[#6b7a90] uppercase tracking-[0.15em] cursor-pointer select-none hover:text-cyan-400 transition-colors"
-                  >
-                    <span className="flex items-center gap-2">Taux horaire <SortIcon col="tauxhoraire" /></span>
-                  </th>
-                  <th 
-                    onClick={() => toggleSort('salaire')}
-                    className="w-[16%] px-8 lg:px-12 py-6 text-left text-sm font-bold text-[#6b7a90] uppercase tracking-[0.15em] cursor-pointer select-none hover:text-cyan-400 transition-colors"
-                  >
-                    <span className="flex items-center gap-2">Salaire <SortIcon col="salaire" /></span>
-                  </th>
-                  <th className="w-[28%] px-8 lg:px-12 py-6 text-left text-sm font-bold text-[#6b7a90] uppercase tracking-[0.15em]">
+                <tr className="border-b border-white/[0.05]">
+                  {[
+                    { key: 'numEns',      label: 'ID',           w: '7%'  },
+                    { key: 'nom',         label: 'Nom complet',  w: '25%' },
+                    { key: 'nbheures',    label: 'Heures',       w: '12%' },
+                    { key: 'tauxhoraire', label: 'Taux horaire', w: '14%' },
+                    { key: 'salaire',     label: 'Salaire',      w: '16%' },
+                  ].map(({ key, label, w }) => (
+                    <th
+                      key={key}
+                      onClick={() => toggleSort(key)}
+                      style={{ width: w }}
+                      className="px-5 py-3.5 text-left text-[10px] font-bold text-[#3d4a5c] uppercase tracking-[0.12em] cursor-pointer select-none hover:text-cyan-400 transition-colors"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        {label} <SortIcon col={key} />
+                      </span>
+                    </th>
+                  ))}
+                  <th className="px-5 py-3.5 text-left text-[10px] font-bold text-[#3d4a5c] uppercase tracking-[0.12em]">
                     Actions
                   </th>
                 </tr>
               </thead>
+
               <tbody>
                 {loading ? (
-                  [...Array(8)].map((_, i) => (
+                  [...Array(6)].map((_, i) => (
                     <tr key={i} className="border-b border-white/[0.03]">
                       {[...Array(6)].map((_, j) => (
-                        <td key={j} className="px-8 lg:px-12 py-7">
-                          <div 
-                            className="h-6 rounded-lg animate-pulse"
-                            style={{ 
-                              width: j === 1 ? '220px' : j === 5 ? '300px' : '100px',
-                              background: 'linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.03) 100%)',
-                              backgroundSize: '200% 100%',
-                              animation: 'shimmer 1.5s infinite',
+                        <td key={j} className="px-5 py-3.5">
+                          <div
+                            className="h-4 rounded-md animate-pulse"
+                            style={{
+                              width: j === 1 ? '160px' : j === 5 ? '180px' : '70px',
+                              background: 'rgba(255,255,255,0.04)',
                             }}
                           />
                         </td>
@@ -267,89 +257,87 @@ export default function Enseignants() {
                   ))
                 ) : filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-8 lg:px-12 py-24 text-center">
-                      <div className="flex flex-col items-center gap-5">
-                        <div className="w-20 h-20 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center">
-                          <Search size={32} className="text-[#3d4a5c]" />
+                    <td colSpan={6} className="px-5 py-16 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center">
+                          <Search size={20} className="text-[#2e3a4a]" />
                         </div>
-                        <div>
-                          <p className="text-[#6b7a90] font-medium text-lg">
-                            {search ? 'Aucun resultat pour cette recherche' : 'Aucun enseignant enregistre'}
-                          </p>
-                          <p className="text-[#3d4a5c] text-base mt-2">
-                            {search ? 'Essayez avec un autre terme' : 'Commencez par ajouter un enseignant'}
-                          </p>
-                        </div>
+                        <p className="text-[#4d5a6e] text-sm">
+                          {search ? 'Aucun résultat pour cette recherche' : 'Aucun enseignant enregistré'}
+                        </p>
+                        <p className="text-[#2e3a4a] text-xs">
+                          {search ? 'Essayez avec un autre terme' : 'Commencez par ajouter un enseignant'}
+                        </p>
                       </div>
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((e, i) => (
+                  filtered.map((e) => (
                     <tr
                       key={e.numEns}
-                      className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-all duration-200 group"
-                      style={{ 
-                        animation: `fadeSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) ${i * 50}ms backwards`
-                      }}
+                      className="border-b border-white/[0.03] hover:bg-white/[0.015] transition-colors group"
                     >
-                      <td className="px-8 lg:px-12 py-6">
-                        <span className="inline-flex items-center px-4 py-2 rounded-lg bg-white/[0.03] border border-white/[0.06] text-[#4d5a6e] text-sm font-mono">
+                      {/* ID */}
+                      <td className="px-5 py-3">
+                        <span className="px-2.5 py-1 rounded-md bg-white/[0.03] border border-white/[0.06] text-[#3d4a5c] text-xs font-mono">
                           #{e.numEns}
                         </span>
                       </td>
-                      <td className="px-8 lg:px-12 py-6">
-                        <div className="flex items-center gap-5">
-                          <div className="relative">
-                            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500 blur-md opacity-0 group-hover:opacity-40 transition-opacity duration-300" />
-                            <div 
-                              className="relative w-14 h-14 rounded-full flex items-center justify-center text-base font-bold text-indigo-300 uppercase border border-indigo-500/20"
-                              style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(0,240,255,0.1) 100%)' }}
-                            >
-                              {e.nom[0]}
-                            </div>
+
+                      {/* Nom */}
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-indigo-300 uppercase shrink-0 border border-indigo-500/15"
+                            style={{ background: 'rgba(99,102,241,0.12)' }}
+                          >
+                            {e.nom[0]}
                           </div>
-                          <span className="font-semibold text-white text-lg">{e.nom}</span>
+                          <span className="font-medium text-white text-[13px]">{e.nom}</span>
                         </div>
                       </td>
-                      <td className="px-8 lg:px-12 py-6">
-                        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-base font-mono">
-                          {e.nbheures}
-                          <span className="text-indigo-400/60 text-sm">h</span>
+
+                      {/* Heures */}
+                      <td className="px-5 py-3">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-indigo-500/10 border border-indigo-500/15 text-indigo-300 text-xs font-mono">
+                          {e.nbheures}<span className="opacity-50 text-[10px]">h</span>
                         </span>
                       </td>
-                      <td className="px-8 lg:px-12 py-6">
-                        <span className="text-[#8892a4] font-mono text-base">
+
+                      {/* Taux horaire */}
+                      <td className="px-5 py-3">
+                        <span className="text-[#6b7a90] font-mono text-xs">
                           {Number(e.tauxhoraire).toLocaleString('fr')}
-                          <span className="text-[#4d5a6e] ml-1.5">Ar</span>
+                          <span className="text-[#3d4a5c] ml-1">Ar</span>
                         </span>
                       </td>
-                      <td className="px-8 lg:px-12 py-6">
-                        <span 
-                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-cyan-300 text-lg font-bold font-mono"
-                          style={{ 
-                            background: 'linear-gradient(135deg, rgba(0,240,255,0.1) 0%, rgba(0,240,255,0.05) 100%)',
-                            border: '1px solid rgba(0,240,255,0.2)',
-                            boxShadow: '0 0 20px rgba(0,240,255,0.1)',
-                          }}
+
+                      {/* Salaire */}
+                      <td className="px-5 py-3">
+                        <span
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-cyan-300 text-[13px] font-bold font-mono"
+                          style={{ background: 'rgba(0,240,255,0.07)', border: '1px solid rgba(0,240,255,0.15)' }}
                         >
                           {Number(e.salaire).toLocaleString('fr')}
-                          <span className="text-cyan-400/60 text-sm font-normal">Ar</span>
+                          <span className="text-cyan-500/50 text-[10px] font-normal">Ar</span>
                         </span>
                       </td>
-                      <td className="px-8 lg:px-12 py-6">
-                        <div className="flex items-center gap-4">
+
+                      {/* Actions */}
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-2">
                           <Link
                             to={`/enseignants/${e.numEns}/modifier`}
-                            className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-base font-medium hover:bg-indigo-500/20 hover:border-indigo-500/30 hover:shadow-[0_0_20px_rgba(99,102,241,0.2)] transition-all duration-200"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium hover:bg-indigo-500/20 transition-colors"
                           >
-                            <Edit2 size={18} />
+                            <Edit2 size={12} />
                             Modifier
                           </Link>
                           <button
                             onClick={() => setToDelete(e)}
-                            className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-base font-medium hover:bg-rose-500/20 hover:border-rose-500/30 hover:shadow-[0_0_20px_rgba(251,113,133,0.2)] transition-all duration-200"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium hover:bg-rose-500/20 transition-colors"
                           >
-                            <Trash2 size={18} />
+                            <Trash2 size={12} />
                             Supprimer
                           </button>
                         </div>
@@ -361,55 +349,24 @@ export default function Enseignants() {
             </table>
           </div>
 
-          {/* Bottom stats bar */}
+          {/* ── Footer stats ── */}
           {!loading && filtered.length > 0 && (
-            <div className="px-8 lg:px-12 py-5 border-t border-white/[0.04] bg-white/[0.01] flex items-center justify-between">
-              <span className="text-[#4d5a6e] text-base">
-                Affichage de <span className="text-[#6b7a90] font-medium">{filtered.length}</span> enseignant{filtered.length !== 1 ? 's' : ''}
+            <div className="px-5 py-3 border-t border-white/[0.04] bg-white/[0.01] flex items-center justify-between">
+              <span className="text-[11px] text-[#3d4a5c]">
+                <span className="text-[#5a6478]">{filtered.length}</span> enseignant{filtered.length !== 1 ? 's' : ''}
               </span>
-              <div className="flex items-center gap-12 text-base">
-                <span className="text-[#4d5a6e]">
-                  Total heures: <span className="text-indigo-400 font-mono font-semibold text-lg">{filtered.reduce((acc, e) => acc + Number(e.nbheures), 0)}h</span>
+              <div className="flex items-center gap-8 text-[11px]">
+                <span className="text-[#3d4a5c]">
+                  Heures: <span className="text-indigo-400 font-mono font-semibold">{totalHeures}h</span>
                 </span>
-                <span className="text-[#4d5a6e]">
-                  Total salaires: <span className="text-cyan-400 font-mono font-semibold text-lg">{filtered.reduce((acc, e) => acc + Number(e.salaire), 0).toLocaleString('fr')} Ar</span>
+                <span className="text-[#3d4a5c]">
+                  Salaires: <span className="text-cyan-400 font-mono font-semibold">{totalSalaire.toLocaleString('fr')} Ar</span>
                 </span>
               </div>
             </div>
           )}
         </div>
       </div>
-
-      {/* Keyframes */}
-      <style>{`
-        @keyframes fadeSlideIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes scale-in {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-        .animate-scale-in {
-          animation: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        @keyframes shimmer {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-      `}</style>
     </div>
   )
 }
