@@ -6,6 +6,10 @@
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/jwt.php';
+require_once __DIR__ . '/../vendor/autoload.php';  // 🆕 PHPMailer
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 
 class AuthController {
 
@@ -66,7 +70,6 @@ class AuthController {
         $email    = trim($body['email'] ?? '');
         $password = $body['password'] ?? '';
 
-        // Validation
         if (empty($username) || empty($email) || empty($password)) {
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Tous les champs sont obligatoires.']);
@@ -93,7 +96,6 @@ class AuthController {
 
         $db = getDB();
 
-        // Vérifier si username ou email existe déjà
         $stmt = $db->prepare('SELECT id FROM users WHERE username = ? OR email = ? LIMIT 1');
         $stmt->execute([$username, $email]);
 
@@ -103,10 +105,8 @@ class AuthController {
             return;
         }
 
-        // Hasher le mot de passe
         $hashedPassword = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
 
-        // Créer l'utilisateur
         $stmt = $db->prepare('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, \'user\')');
         $stmt->execute([$username, $email, $hashedPassword]);
 
@@ -119,7 +119,7 @@ class AuthController {
     /**
      * POST /api/auth/forgot-password
      * Corps : { "email": "..." }
-     * Envoie un code de réinitialisation par email
+     * Envoie un vrai code de réinitialisation par email
      */
     public static function forgotPassword(): void {
         $body = json_decode(file_get_contents('php://input'), true);
@@ -133,13 +133,11 @@ class AuthController {
 
         $db = getDB();
 
-        // Vérifier si l'email existe
         $stmt = $db->prepare('SELECT id, username FROM users WHERE email = ? LIMIT 1');
         $stmt->execute([$email]);
         $user = $stmt->fetch();
 
         if (!$user) {
-            // Ne pas révéler si l'email existe (sécurité)
             echo json_encode([
                 'success' => true,
                 'message' => 'Si cet email est enregistré, un code de réinitialisation a été envoyé.'
@@ -160,21 +158,75 @@ class AuthController {
         );
         $stmt->execute([$email, $code]);
 
-        // TODO: Envoyer l'email
-        // mail($email, "Réinitialisation de mot de passe", "Votre code : $code");
-        error_log("Code de réinitialisation pour $email : $code");
+        // ─── ENVOI DU VRAI EMAIL AVEC PHPMAILER ───
+        $mailSent = self::sendResetEmail($email, $user['username'], $code);
 
-        echo json_encode([
-            'success' => true,
-            'message' => 'Code de réinitialisation envoyé.',
-            'debug_code' => $code  // ⚠️ À retirer en production !
-        ]);
+        if ($mailSent) {
+            echo json_encode([
+                'success' => true,
+                'message' => 'Code de réinitialisation envoyé par email.'
+            ]);
+        } else {
+            // Fallback : afficher le code en développement
+            echo json_encode([
+                'success' => true,
+                'message' => 'Code envoyé (mode debug).',
+                'debug_code' => $code
+            ]);
+        }
+    }
+
+    /**
+     * Envoyer l'email de réinitialisation
+     */
+    private static function sendResetEmail(string $email, string $username, string $code): bool {
+        try {
+            $mailConfig = require __DIR__ . '/../config/mail.php';
+            
+            $mail = new PHPMailer(true);
+            $mail->isSMTP();
+            $mail->Host       = $mailConfig['host'];
+            $mail->SMTPAuth   = true;
+            $mail->Username   = $mailConfig['username'];
+            $mail->Password   = $mailConfig['password'];
+            $mail->SMTPSecure = $mailConfig['encryption'];
+            $mail->Port       = $mailConfig['port'];
+            $mail->CharSet    = 'UTF-8';
+
+            $mail->setFrom($mailConfig['from_email'], $mailConfig['from_name']);
+            $mail->addAddress($email, $username);
+
+            $mail->isHTML(true);
+            $mail->Subject = 'Code de réinitialisation - GestionEns';
+            $mail->Body    = '
+            <!DOCTYPE html>
+            <html>
+            <head><meta charset="UTF-8"></head>
+            <body style="font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px;">
+                <div style="max-width: 500px; margin: auto; background: white; border-radius: 12px; padding: 30px;">
+                    <h2 style="color: #333;">Bonjour ' . htmlspecialchars($username) . ',</h2>
+                    <p style="color: #666;">Vous avez demandé la réinitialisation de votre mot de passe.</p>
+                    <p style="color: #666;">Voici votre code :</p>
+                    <div style="background: #00b8c8; color: white; font-size: 32px; font-weight: bold; letter-spacing: 10px; text-align: center; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        ' . $code . '
+                    </div>
+                    <p style="color: #999; font-size: 13px;">Ce code expire dans 15 minutes.</p>
+                    <p style="color: #999; font-size: 13px;">Si vous n\'avez pas demandé cette réinitialisation, ignorez cet email.</p>
+                </div>
+            </body>
+            </html>';
+
+            $mail->send();
+            return true;
+        } catch (Exception $e) {
+            error_log("Erreur envoi email : " . $e->getMessage());
+            return false;
+        }
     }
 
     /**
      * POST /api/auth/verify-reset-code
      * Corps : { "email": "...", "code": "..." }
-     * Vérifie si le code est valide
      */
     public static function verifyResetCode(): void {
         $body = json_decode(file_get_contents('php://input'), true);
@@ -212,7 +264,6 @@ class AuthController {
     /**
      * POST /api/auth/reset-password
      * Corps : { "email": "...", "code": "...", "password": "..." }
-     * Réinitialise le mot de passe après vérification du code
      */
     public static function resetPassword(): void {
         $body = json_decode(file_get_contents('php://input'), true);
@@ -235,7 +286,6 @@ class AuthController {
 
         $db = getDB();
 
-        // Vérifier le code
         $stmt = $db->prepare(
             'SELECT id FROM password_resets 
              WHERE email = ? AND code = ? AND used = 0 AND expires_at > NOW() 
@@ -250,12 +300,10 @@ class AuthController {
             return;
         }
 
-        // Mettre à jour le mot de passe
         $hashedPassword = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
         $stmt = $db->prepare('UPDATE users SET password = ? WHERE email = ?');
         $stmt->execute([$hashedPassword, $email]);
 
-        // Marquer tous les codes comme utilisés
         $stmt = $db->prepare('UPDATE password_resets SET used = 1 WHERE email = ?');
         $stmt->execute([$email]);
 
@@ -267,14 +315,13 @@ class AuthController {
 
     /**
      * POST /api/auth/logout
-     * Le frontend doit supprimer le token côté client.
      */
     public static function logout(): void {
         echo json_encode(['success' => true, 'message' => 'Déconnexion effectuée.']);
     }
 
     /**
-     * GET /api/auth/me  — retourne l'utilisateur courant
+     * GET /api/auth/me
      */
     public static function me(): void {
         $payload = requireAuth();

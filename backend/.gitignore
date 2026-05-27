@@ -1,0 +1,10 @@
+# Dépendances (installées via composer install)
+vendor/
+
+# Fichiers de test
+test-mail.php
+
+# Configuration sensible (contient des mots de passe)# Fichiers temporaires
+*.log
+*.tmp
+.DS_Store
