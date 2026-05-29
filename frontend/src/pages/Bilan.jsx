@@ -1,5 +1,6 @@
 /**
  * Page Bilan — statistiques + camembert + histogramme
+ * Design premium aligné sur le design system (index.css)
  */
 
 import { useEffect, useState } from 'react'
@@ -11,20 +12,31 @@ import {
 import {
   TrendingUp, TrendingDown, DollarSign, Users,
   BarChart3, Award, Minus, PieChart as PieIcon,
+  Sparkles, Target, Wallet
 } from 'lucide-react'
 
+/* ─── Tooltip personnalisé ─── */
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-card border border-border rounded-xl px-3 py-2 shadow-card text-xs">
-      <p className="font-semibold text-[#e8edf5] mb-1">{label}</p>
+    <div className="card !p-3 !rounded-xl shadow-elevation-3" style={{ fontSize: '12px' }}>
+      <p className="font-semibold mb-1 text-primary">{label}</p>
       {payload.map((p) => (
-        <p key={p.dataKey} style={{ color: p.color }}>
+        <p key={p.dataKey} style={{ color: p.color, fontFamily: '"JetBrains Mono", monospace' }}>
           {p.name} : {Number(p.value).toLocaleString('fr')} Ar
         </p>
       ))}
     </div>
   )
+}
+
+/* ─── Couleurs des graphiques ─── */
+const CHART_COLORS = {
+  min:   '#e11d48',
+  max:   '#059669',
+  total: '#4f46e5',
+  grid:  'var(--border-color)',
+  text:  'var(--text-muted)',
 }
 
 export default function Bilan() {
@@ -44,209 +56,239 @@ export default function Bilan() {
 
   const fmt = (n) => Number(n ?? 0).toLocaleString('fr')
 
-  // Préparer les données pour le graphique de bilan (min, max, total)
+  /* Données pour les graphiques */
   const bilanData = data ? [
-    { name: 'Salaire Minimum', value: data.salaire_min, fill: '#f43f5e' },
-    { name: 'Salaire Maximum', value: data.salaire_max, fill: '#10b981' },
-    { name: 'Masse Salariale Totale', value: data.salaire_total, fill: '#6366f1' },
+    { name: 'Salaire Minimum',       value: data.salaire_min,   fill: CHART_COLORS.min },
+    { name: 'Salaire Maximum',       value: data.salaire_max,   fill: CHART_COLORS.max },
+    { name: 'Masse Salariale Totale', value: data.salaire_total, fill: CHART_COLORS.total },
   ] : []
 
+  /* Stats cards */
+  const stats = [
+    {
+      label: 'Total enseignants',
+      value: data?.total ?? 0,
+      suffix: '',
+      icon: Users,
+      tint: '99,102,241',
+      color: '#4f46e5',
+    },
+    {
+      label: 'Masse salariale totale',
+      value: fmt(data?.salaire_total),
+      suffix: 'Ar',
+      icon: Wallet,
+      tint: '6,182,212',
+      color: '#0891b2',
+    },
+    {
+      label: 'Salaire maximal',
+      value: fmt(data?.salaire_max),
+      suffix: 'Ar',
+      icon: TrendingUp,
+      tint: '16,185,129',
+      color: '#059669',
+      detail: data?.detail?.[0]?.nom,
+    },
+    {
+      label: 'Salaire minimal',
+      value: fmt(data?.salaire_min),
+      suffix: 'Ar',
+      icon: TrendingDown,
+      tint: '225,29,72',
+      color: '#e11d48',
+      detail: data?.detail?.[data?.detail?.length - 1]?.nom,
+    },
+  ]
+
   return (
-    <div className="space-y-8">
+    <div style={{ padding: '28px 32px', maxWidth: '1440px', margin: '0 auto' }}>
+      <div className="space-y-6 stagger-children">
 
-      {/* ── Header ── */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-emerald/10 border border-emerald/20 flex items-center justify-center text-emerald">
-          <BarChart3 size={19} />
+        {/* ═══ Header ═══ */}
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center"
+               style={{
+                 background: 'linear-gradient(135deg, rgba(16,185,129,0.15), rgba(5,150,105,0.1))',
+                 border: '1px solid rgba(16,185,129,0.25)',
+                 boxShadow: '0 4px 12px rgba(16,185,129,0.15)'
+               }}>
+            <BarChart3 size={19} style={{ color: '#059669' }} />
+          </div>
+          <div>
+            <h1 className="page-title !text-2xl">Bilan salarial</h1>
+            <p className="text-[11px] flex items-center gap-1.5 mt-1 text-muted">
+              <Target size={11} className="text-emerald-600" />
+              Récapitulatif des rémunérations
+            </p>
+          </div>
         </div>
+
+        {/* ═══ Stats cards 2x2 ═══ */}
+        <div className="grid sm:grid-cols-2 gap-4">
+          {stats.map(({ label, value, suffix, icon: Icon, tint, color, detail }, i) => (
+            loading ? (
+              <div key={label} className="card h-28 animate-pulse" />
+            ) : (
+              <div key={label} className="card !p-5 relative overflow-hidden group"
+                   style={{ animationDelay: `${i * 80}ms`, animationFillMode: 'both' }}
+              >
+                {/* Glow radial au hover */}
+                <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-40 transition-opacity group-hover:opacity-80"
+                     style={{ background: `radial-gradient(circle, rgba(${tint},0.12), transparent 70%)` }} />
+
+                <div className="relative flex items-start gap-4">
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                       style={{
+                         background: `rgba(${tint},0.12)`,
+                         border: `1px solid rgba(${tint},0.2)`
+                       }}>
+                    <Icon size={20} style={{ color }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] uppercase tracking-widest mb-1.5 font-semibold text-muted">
+                      {label}
+                    </p>
+                    <p className="text-2xl font-bold font-mono tracking-tight" style={{ color }}>
+                      {value}
+                      {suffix && (
+                        <span className="text-sm font-normal opacity-60 ml-1 text-muted">{suffix}</span>
+                      )}
+                    </p>
+                    {detail && (
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        {label.includes('maximal') ? (
+                          <Award size={11} style={{ color, opacity: 0.7 }} />
+                        ) : (
+                          <Minus size={11} style={{ color, opacity: 0.7 }} />
+                        )}
+                        <span className="text-xs text-secondary truncate">{detail}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          ))}
+        </div>
+
+        {/* ═══ Graphiques ═══ */}
         <div>
-          <h1 className="page-title">Bilan salarial</h1>
-          <p className="text-[#8892a4] text-xs mt-0.5">Récapitulatif des rémunérations</p>
-        </div>
-      </div>
-
-      {/* ── 4 cartes en grid 2x2 ── */}
-      <div className="grid sm:grid-cols-2 gap-5">
-
-        {/* Total enseignants */}
-        {loading ? (
-          <div className="card h-28 animate-pulse" />
-        ) : (
-          <div className="card animate-slide-up">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-indigo/10 border border-indigo/20 flex items-center justify-center text-indigo shrink-0">
-                <Users size={22} />
-              </div>
-              <div>
-                <p className="text-[#8892a4] text-xs font-medium uppercase tracking-wider">Total enseignants</p>
-                <p className="font-display text-3xl font-bold text-[#e8edf5] mt-0.5">{data?.total ?? 0}</p>
-              </div>
+          <div className="flex items-center gap-2.5 mb-5">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+                 style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)' }}>
+              <PieIcon size={13} className="text-indigo-500" />
             </div>
-          </div>
-        )}
-
-        {/* Masse salariale */}
-        {loading ? (
-          <div className="card h-28 animate-pulse" />
-        ) : (
-          <div className="card animate-slide-up" style={{ animationDelay:'80ms', animationFillMode:'both' }}>
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-cyan/10 border border-cyan/20 flex items-center justify-center text-cyan shrink-0">
-                <DollarSign size={22} />
-              </div>
-              <div>
-                <p className="text-[#8892a4] text-xs font-medium uppercase tracking-wider">Masse salariale totale</p>
-                <p className="font-display text-2xl font-bold text-cyan mt-1 font-mono">
-                  {fmt(data?.salaire_total)}
-                  <span className="text-sm font-sans font-normal text-[#8892a4] ml-1">Ar</span>
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Salaire maximal */}
-        {loading ? (
-          <div className="card h-28 animate-pulse" />
-        ) : (
-          <div className="card animate-slide-up" style={{ animationDelay:'160ms', animationFillMode:'both' }}>
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald/10 border border-emerald/20 flex items-center justify-center text-emerald shrink-0">
-                <TrendingUp size={22} />
-              </div>
-              <div>
-                <p className="text-[#8892a4] text-xs font-medium uppercase tracking-wider">Salaire maximal</p>
-                <p className="font-display text-2xl font-bold text-emerald mt-1 font-mono">
-                  {fmt(data?.salaire_max)}
-                  <span className="text-sm font-sans font-normal text-[#8892a4] ml-1">Ar</span>
-                </p>
-                {data?.detail?.length > 0 && (
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <Award size={11} className="text-emerald/60" />
-                    <span className="text-xs text-[#4d5a6e]">{data.detail[0]?.nom}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Salaire minimal */}
-        {loading ? (
-          <div className="card h-28 animate-pulse" />
-        ) : (
-          <div className="card animate-slide-up" style={{ animationDelay:'240ms', animationFillMode:'both' }}>
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-rose/10 border border-rose/20 flex items-center justify-center text-rose shrink-0">
-                <TrendingDown size={22} />
-              </div>
-              <div>
-                <p className="text-[#8892a4] text-xs font-medium uppercase tracking-wider">Salaire minimal</p>
-                <p className="font-display text-2xl font-bold text-rose mt-1 font-mono">
-                  {fmt(data?.salaire_min)}
-                  <span className="text-sm font-sans font-normal text-[#8892a4] ml-1">Ar</span>
-                </p>
-                {data?.detail?.length > 0 && (
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <Minus size={11} className="text-rose/60" />
-                    <span className="text-xs text-[#4d5a6e]">{data.detail[data.detail.length - 1]?.nom}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ── Graphiques ── */}
-      <div>
-        <div className="flex items-center gap-2 mb-5">
-          <PieIcon size={16} className="text-[#8892a4]" />
-          <p className="text-xs font-semibold text-[#8892a4] uppercase tracking-wider">Visualisations</p>
-        </div>
-
-        <div className="grid lg:grid-cols-2 gap-6">
-
-          {/* Histogramme du bilan */}
-          <div className="card space-y-4">
             <div>
-              <h2 className="font-display font-semibold text-[#e8edf5]">Bilan des salaires</h2>
-              <p className="text-xs text-[#4d5a6e] mt-0.5">Salaire minimum, maximum et masse salariale totale</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-secondary">
+                Visualisations
+              </p>
             </div>
-            {loading ? (
-              <div className="h-64 bg-surface rounded-xl animate-pulse" />
-            ) : (
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={bilanData} margin={{ top: 4, right: 10, left: 10, bottom: 40 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#252d3d" vertical={false} />
-                  <XAxis
-                    dataKey="name"
-                    tick={{ fill: '#8892a4', fontSize: 11 }}
-                    angle={0}
-                    textAnchor="middle"
-                    interval={0}
-                  />
-                  <YAxis
-                    tick={{ fill: '#8892a4', fontSize: 11 }}
-                    tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99,102,241,0.05)' }} />
-                  <Bar dataKey="value" name="Montant" radius={[6,6,0,0]} maxBarSize={80}>
-                    {bilanData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            )}
           </div>
 
-          {/* Camembert du bilan */}
-          <div className="card space-y-4">
-            <div>
-              <h2 className="font-display font-semibold text-[#e8edf5]">Répartition du bilan</h2>
-              <p className="text-xs text-[#4d5a6e] mt-0.5">Proportion du salaire min, max et total</p>
+          <div className="grid lg:grid-cols-2 gap-5">
+
+            {/* ═══ Histogramme ═══ */}
+            <div className="card !p-6 space-y-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <BarChart3 size={15} className="text-indigo-500" />
+                  <h2 className="text-sm font-semibold text-primary">Bilan des salaires</h2>
+                </div>
+                <p className="text-xs text-muted">
+                  Salaire minimum, maximum et masse salariale totale
+                </p>
+              </div>
+
+              {loading ? (
+                <div className="h-64 rounded-xl skeleton" />
+              ) : (
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={bilanData} margin={{ top: 4, right: 10, left: 10, bottom: 30 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} vertical={false} />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fill: CHART_COLORS.text, fontSize: 10 }}
+                      angle={0}
+                      textAnchor="middle"
+                      interval={0}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fill: CHART_COLORS.text, fontSize: 10 }}
+                      tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99,102,241,0.04)' }} />
+                    <Bar dataKey="value" name="Montant" radius={[6, 6, 0, 0]} maxBarSize={64}>
+                      {bilanData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
-            {loading ? (
-              <div className="h-64 bg-surface rounded-xl animate-pulse" />
-            ) : (
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={bilanData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="45%"
-                    outerRadius={90}
-                    innerRadius={40}
-                    paddingAngle={5}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
-                    labelLine={{ stroke: '#3a4459' }}
-                  >
-                    {bilanData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(v) => [`${Number(v).toLocaleString('fr')} Ar`, 'Montant']}
-                    contentStyle={{ background:'#1c2333', border:'1px solid #252d3d', borderRadius:'12px', fontSize:'12px' }}
-                    labelStyle={{ color:'#e8edf5' }}
-                    itemStyle={{ color:'#8892a4' }}
-                  />
-                  <Legend 
-                    formatter={(v) => <span className="text-xs text-[#8892a4]">{v}</span>}
-                    iconType="circle"
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
+
+            {/* ═══ Camembert ═══ */}
+            <div className="card !p-6 space-y-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <PieIcon size={15} className="text-indigo-500" />
+                  <h2 className="text-sm font-semibold text-primary">Répartition du bilan</h2>
+                </div>
+                <p className="text-xs text-muted">
+                  Proportion du salaire min, max et total
+                </p>
+              </div>
+
+              {loading ? (
+                <div className="h-64 rounded-xl skeleton" />
+              ) : (
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart>
+                    <Pie
+                      data={bilanData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="45%"
+                      outerRadius={90}
+                      innerRadius={40}
+                      paddingAngle={4}
+                      label={({ name, percent }) => `${name.split(' ')[0]} ${(percent * 100).toFixed(0)}%`}
+                      labelLine={{ stroke: CHART_COLORS.text, strokeWidth: 1 }}
+                    >
+                      {bilanData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(v) => [`${Number(v).toLocaleString('fr')} Ar`, 'Montant']}
+                      contentStyle={{
+                        background: 'var(--card-bg)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        boxShadow: 'var(--shadow-elevation-3)',
+                      }}
+                      labelStyle={{ color: 'var(--text-primary)', fontWeight: 600 }}
+                      itemStyle={{ color: 'var(--text-secondary)' }}
+                    />
+                    <Legend
+                      formatter={(v) => (
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>{v}</span>
+                      )}
+                      iconType="circle"
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </div>
           </div>
         </div>
       </div>
-
     </div>
   )
 }

@@ -1,6 +1,7 @@
 /**
  * Page Liste des enseignants — CRUD complet
- * Design moderne, aligné sur le design system (index.css)
+ * Design premium aligné sur le design system (index.css)
+ * Même niveau de finition que Bilan.jsx
  */
 
 import { useEffect, useState, useMemo } from 'react'
@@ -13,15 +14,17 @@ import {
   Filter, X, SlidersHorizontal, Clock, Wallet, TrendingUp
 } from 'lucide-react'
 
-/* ───────── Modal suppression ───────── */
+/* ═══════════════════════════════════════════════════════════
+   MODAL SUPPRESSION
+   ═══════════════════════════════════════════════════════════ */
 function DeleteModal({ name, onConfirm, onCancel, loading }) {
   return (
     <>
       <div className="modal-overlay" onClick={onCancel} />
       <div className="modal left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-sm">
         <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5 mx-auto"
-             style={{ background: 'rgba(251,113,133,0.12)', border: '1px solid rgba(251,113,133,0.25)' }}>
-          <AlertTriangle size={22} className="text-rose-500" />
+             style={{ background: 'rgba(225,29,72,0.1)', border: '1px solid rgba(225,29,72,0.25)' }}>
+          <AlertTriangle size={22} style={{ color: '#e11d48' }} />
         </div>
         <h3 className="font-semibold text-base text-center mb-2 text-primary">
           Supprimer l&apos;enseignant
@@ -49,7 +52,9 @@ function DeleteModal({ name, onConfirm, onCancel, loading }) {
   )
 }
 
-/* ───────── Filtre intelligent ───────── */
+/* ═══════════════════════════════════════════════════════════
+   FILTRE INTELLIGENT — Fond opaque, textes visibles
+   ═══════════════════════════════════════════════════════════ */
 function SmartFilter({ filters, setFilters, onClose }) {
   const [local, setLocal] = useState(filters)
   const change = (k, v) => setLocal(p => ({ ...p, [k]: v }))
@@ -61,15 +66,16 @@ function SmartFilter({ filters, setFilters, onClose }) {
 
   const Range = ({ label, minKey, maxKey, unit, accent }) => (
     <div>
-      <label className="text-[11px] font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5 text-muted">
-        <span className="w-1 h-1 rounded-full" style={{ background: accent }} />
-        {label}{unit && <span className="normal-case font-normal opacity-60">({unit})</span>}
+      <label className="text-[11px] font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5"
+             style={{ color: 'var(--text-secondary)' }}>
+        <span className="w-1.5 h-1.5 rounded-full" style={{ background: accent }} />
+        {label}{unit && <span className="normal-case font-normal opacity-60 ml-0.5">({unit})</span>}
       </label>
       <div className="flex items-center gap-2">
         <input type="number" placeholder="Min" value={local[minKey]}
                onChange={(e) => change(minKey, e.target.value)}
                className="input-dark !py-2 !px-3 !text-sm" />
-        <span className="text-xs text-muted">→</span>
+        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>→</span>
         <input type="number" placeholder="Max" value={local[maxKey]}
                onChange={(e) => change(maxKey, e.target.value)}
                className="input-dark !py-2 !px-3 !text-sm" />
@@ -78,36 +84,75 @@ function SmartFilter({ filters, setFilters, onClose }) {
   )
 
   return (
-    <div className="card absolute top-full left-0 mt-2 w-[500px] z-50 !p-6 stagger-children"
-         style={{ animation: 'slideUp 0.25s cubic-bezier(0.16,1,0.3,1)' }}>
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-               style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)' }}>
-            <SlidersHorizontal size={15} className="text-indigo-500" />
+    <>
+      {/* Overlay avec backdrop blur pour l'effet "fenêtre devant fenêtre" */}
+      <div className="fixed inset-0 z-40"
+           style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(2px)' }}
+           onClick={onClose} />
+
+      {/* Panneau filtre — fond totalement opaque */}
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] z-50 rounded-2xl p-6"
+           style={{
+             background: 'var(--bg-secondary)',
+             border: '1px solid var(--border-color)',
+             boxShadow: '0 24px 64px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.2)',
+             animation: 'slideUp 0.25s cubic-bezier(0.16,1,0.3,1)'
+           }}>
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center"
+                 style={{
+                   background: 'rgba(79,70,229,0.12)',
+                   border: '1px solid rgba(79,70,229,0.2)'
+                 }}>
+              <SlidersHorizontal size={16} style={{ color: '#4f46e5' }} />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                Filtres avancés
+              </h3>
+              <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                Affinez votre recherche
+              </p>
+            </div>
           </div>
-          <h3 className="text-sm font-semibold text-primary">Filtres avancés</h3>
+          <button onClick={onClose}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                  style={{
+                    color: 'var(--text-secondary)',
+                    background: 'var(--hover-bg)',
+                    border: '1px solid var(--border-color)'
+                  }}>
+            <X size={14} />
+          </button>
         </div>
-        <button onClick={onClose} className="btn-ghost !p-2 !rounded-lg">
-          <X size={14} />
-        </button>
-      </div>
 
-      <div className="space-y-4">
-        <Range label="Nombre d'heures" minKey="heuresMin" maxKey="heuresMax" unit="h"  accent="#4f46e5" />
-        <Range label="Taux horaire"    minKey="tauxMin"   maxKey="tauxMax"   unit="Ar" accent="#7c3aed" />
-        <Range label="Salaire"         minKey="salaireMin" maxKey="salaireMax" unit="Ar" accent="#0891b2" />
-      </div>
+        {/* Champs */}
+        <div className="space-y-5">
+          <Range label="Nombre d'heures" minKey="heuresMin" maxKey="heuresMax" unit="h"  accent="#4f46e5" />
+          <Range label="Taux horaire"    minKey="tauxMin"   maxKey="tauxMax"   unit="Ar" accent="#7c3aed" />
+          <Range label="Salaire"         minKey="salaireMin" maxKey="salaireMax" unit="Ar" accent="#0891b2" />
+        </div>
 
-      <div className="flex items-center gap-2 mt-6">
-        <button onClick={reset}   className="btn-secondary flex-1 !py-2 !text-xs">Réinitialiser</button>
-        <button onClick={apply}   className="btn-primary   flex-1 !py-2 !text-xs">Appliquer</button>
+        {/* Actions */}
+        <div className="flex items-center gap-2 mt-6 pt-5 border-t" style={{ borderColor: 'var(--border-color)' }}>
+          <button onClick={reset} className="btn-secondary flex-1 !py-2.5 !text-xs">
+            Réinitialiser
+          </button>
+          <button onClick={apply} className="btn-primary flex-1 !py-2.5 !text-xs">
+            Appliquer les filtres
+          </button>
+        </div>
       </div>
-    </div>
+    </>
   )
 }
 
-/* ───────── Page ───────── */
+/* ═══════════════════════════════════════════════════════════
+   PAGE PRINCIPALE
+   ═══════════════════════════════════════════════════════════ */
 export default function Enseignants() {
   const [list, setList]         = useState([])
   const [filtered, setFiltered] = useState([])
@@ -171,35 +216,59 @@ export default function Enseignants() {
   }
 
   const SortIcon = ({ col }) => {
-    if (sort.key !== col) return <ChevronUp size={12} className="text-muted opacity-40" />
+    if (sort.key !== col) return <ChevronUp size={12} className="text-muted opacity-30" />
     return sort.dir === 'asc'
-      ? <ChevronUp   size={12} className="text-link" />
-      : <ChevronDown size={12} className="text-link" />
+      ? <ChevronUp   size={12} style={{ color: '#2563eb' }} />
+      : <ChevronDown size={12} style={{ color: '#2563eb' }} />
   }
 
   const totalHeures  = filtered.reduce((acc, e) => acc + Number(e.nbheures), 0)
   const totalSalaire = filtered.reduce((acc, e) => acc + Number(e.salaire), 0)
 
+  /* Stats cards */
   const stats = [
-    { label: 'Total enseignants', value: filtered.length, suffix: '',
-      icon: Users,      tint: '99,102,241',  color: '#4f46e5' },
-    { label: 'Total heures', value: totalHeures, suffix: 'h',
-      icon: Clock,      tint: '124,58,237',  color: '#7c3aed' },
-    { label: 'Masse salariale', value: totalSalaire.toLocaleString('fr'), suffix: ' Ar',
-      icon: Wallet,     tint: '8,145,178',   color: '#0891b2' },
+    {
+      label: 'Total enseignants',
+      value: filtered.length,
+      suffix: '',
+      icon: Users,
+      tint: '99,102,241',
+      color: '#4f46e5',
+    },
+    {
+      label: 'Total heures',
+      value: totalHeures,
+      suffix: 'h',
+      icon: Clock,
+      tint: '124,58,237',
+      color: '#7c3aed',
+    },
+    {
+      label: 'Masse salariale',
+      value: totalSalaire.toLocaleString('fr'),
+      suffix: 'Ar',
+      icon: Wallet,
+      tint: '8,145,178',
+      color: '#0891b2',
+    },
   ]
 
   return (
-    <div className="min-h-screen w-full px-6 py-7">
+    <div style={{ padding: '28px 32px', maxWidth: '1440px', margin: '0 auto' }}>
       <ToastContainer />
       {toDelete && (
         <DeleteModal name={toDelete.nom} onConfirm={handleDelete}
                      onCancel={() => setToDelete(null)} loading={deleting} />
       )}
 
-      <div className="max-w-[1400px] mx-auto space-y-6 stagger-children">
+      {/* Filtre modal */}
+      {showFilters && (
+        <SmartFilter filters={filters} setFilters={setFilters} onClose={() => setShowFilters(false)} />
+      )}
 
-        {/* ─── Header ─── */}
+      <div className="space-y-6 stagger-children">
+
+        {/* ═══ Header ═══ */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-2xl flex items-center justify-center"
@@ -208,17 +277,17 @@ export default function Enseignants() {
                    border: '1px solid rgba(99,102,241,0.25)',
                    boxShadow: '0 4px 12px rgba(79,70,229,0.15)'
                  }}>
-              <Users size={19} className="text-indigo-500" />
+              <Users size={19} style={{ color: '#4f46e5' }} />
             </div>
             <div>
               <h1 className="page-title !text-2xl">Enseignants</h1>
               <p className="text-[11px] flex items-center gap-1.5 mt-1 text-muted">
-                <Database size={11} className="text-link" />
+                <Database size={11} style={{ color: '#2563eb' }} />
                 {filtered.length} enregistrement{filtered.length !== 1 ? 's' : ''}
                 {activeFilterCount > 0 && (
                   <>
                     <span className="w-1 h-1 rounded-full bg-current opacity-40" />
-                    <span className="text-link font-medium">
+                    <span className="font-medium" style={{ color: '#2563eb' }}>
                       {activeFilterCount} filtre{activeFilterCount > 1 ? 's' : ''} actif{activeFilterCount > 1 ? 's' : ''}
                     </span>
                   </>
@@ -240,12 +309,14 @@ export default function Enseignants() {
           </div>
         </div>
 
-        {/* ─── Stat cards ─── */}
+        {/* ═══ Stats cards ═══ */}
         <div className="grid grid-cols-3 gap-4">
-          {stats.map(({ label, value, suffix, icon: Icon, tint, color }) => (
-            <div key={label} className="card !p-5 relative overflow-hidden group">
-              <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-50 transition-opacity group-hover:opacity-80"
+          {stats.map(({ label, value, suffix, icon: Icon, tint, color }, i) => (
+            <div key={label} className="card !p-5 relative overflow-hidden group"
+                 style={{ animationDelay: `${i * 80}ms`, animationFillMode: 'both' }}>
+              <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-40 transition-opacity duration-300 group-hover:opacity-80 pointer-events-none"
                    style={{ background: `radial-gradient(circle, rgba(${tint},0.12), transparent 70%)` }} />
+
               <div className="relative flex items-start justify-between">
                 <div>
                   <p className="text-[11px] uppercase tracking-widest mb-2 font-semibold text-muted">{label}</p>
@@ -254,8 +325,11 @@ export default function Enseignants() {
                     <span className="text-sm font-normal opacity-60 ml-0.5 text-muted">{suffix}</span>
                   </p>
                 </div>
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                     style={{ background: `rgba(${tint},0.12)`, border: `1px solid rgba(${tint},0.2)` }}>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                     style={{
+                       background: `rgba(${tint},0.12)`,
+                       border: `1px solid rgba(${tint},0.2)`
+                     }}>
                   <Icon size={16} style={{ color }} />
                 </div>
               </div>
@@ -263,7 +337,7 @@ export default function Enseignants() {
           ))}
         </div>
 
-        {/* ─── Search & Filters ─── */}
+        {/* ═══ Search & Filters ═══ */}
         <div className="flex items-center gap-3 flex-wrap">
           <div className="relative w-80">
             <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
@@ -278,29 +352,26 @@ export default function Enseignants() {
             )}
           </div>
 
-          <div className="relative">
-            <button onClick={() => setShowFilters(!showFilters)}
-                    className={activeFilterCount === 0 ? 'btn-secondary !py-2.5 !px-4 !text-xs' : 'btn-primary !py-2.5 !px-4 !text-xs'}>
-              <Filter size={13} />
-              Filtres
-              {activeFilterCount > 0 && (
-                <span className="ml-1 w-5 h-5 rounded-full bg-white/25 text-[10px] font-bold flex items-center justify-center">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
-            {showFilters && (
-              <SmartFilter filters={filters} setFilters={setFilters} onClose={() => setShowFilters(false)} />
+          <button onClick={() => setShowFilters(true)}
+                  className={activeFilterCount === 0
+                    ? 'btn-secondary !py-2.5 !px-4 !text-xs'
+                    : 'btn-primary !py-2.5 !px-4 !text-xs'}>
+            <Filter size={13} />
+            Filtres
+            {activeFilterCount > 0 && (
+              <span className="ml-1 w-5 h-5 rounded-full bg-white/25 text-[10px] font-bold flex items-center justify-center">
+                {activeFilterCount}
+              </span>
             )}
-          </div>
+          </button>
 
           {activeFilterCount > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
               {[
                 ['heuresMin',  `Heures ≥ ${filters.heuresMin}h`,                       'indigo'],
                 ['heuresMax',  `Heures ≤ ${filters.heuresMax}h`,                       'indigo'],
-                ['tauxMin',    `Taux ≥ ${Number(filters.tauxMin).toLocaleString()} Ar`, 'amber'],
-                ['tauxMax',    `Taux ≤ ${Number(filters.tauxMax).toLocaleString()} Ar`, 'amber'],
+                ['tauxMin',    `Taux ≥ ${Number(filters.tauxMin).toLocaleString()} Ar`, 'indigo'],
+                ['tauxMax',    `Taux ≤ ${Number(filters.tauxMax).toLocaleString()} Ar`, 'indigo'],
                 ['salaireMin', `Salaire ≥ ${Number(filters.salaireMin).toLocaleString()} Ar`, 'cyan'],
                 ['salaireMax', `Salaire ≤ ${Number(filters.salaireMax).toLocaleString()} Ar`, 'cyan'],
               ].filter(([k]) => filters[k]).map(([k, label, variant]) => (
@@ -316,7 +387,7 @@ export default function Enseignants() {
           )}
         </div>
 
-        {/* ─── Table ─── */}
+        {/* ═══ Table ═══ */}
         <div className="card !p-0 overflow-hidden">
           <div className="h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
           <div className="overflow-x-auto">
@@ -443,22 +514,23 @@ export default function Enseignants() {
             </table>
           </div>
 
+          {/* Footer */}
           {!loading && filtered.length > 0 && (
             <div className="px-5 py-3 border-t flex items-center justify-between"
                  style={{ borderColor: 'var(--border-color)', background: 'var(--surface-bg)' }}>
               <span className="text-[11px] font-medium text-secondary">
                 {filtered.length} enseignant{filtered.length !== 1 ? 's' : ''}
                 {activeFilterCount > 0 && (
-                  <span className="ml-1 text-link">· filtré{filtered.length > 1 ? 's' : ''}</span>
+                  <span className="ml-1" style={{ color: '#2563eb' }}>· filtré{filtered.length > 1 ? 's' : ''}</span>
                 )}
               </span>
               <div className="flex items-center gap-6 text-[11px]">
                 <span className="text-secondary flex items-center gap-1.5">
-                  <Clock size={11} className="text-indigo-500" />
+                  <Clock size={11} style={{ color: '#4f46e5' }} />
                   <span className="font-mono font-bold" style={{ color: '#4f46e5' }}>{totalHeures}h</span>
                 </span>
                 <span className="text-secondary flex items-center gap-1.5">
-                  <TrendingUp size={11} className="text-cyan-600" />
+                  <TrendingUp size={11} style={{ color: '#0891b2' }} />
                   <span className="font-mono font-bold" style={{ color: '#0891b2' }}>
                     {totalSalaire.toLocaleString('fr')} Ar
                   </span>
@@ -471,4 +543,3 @@ export default function Enseignants() {
     </div>
   )
 }
-
