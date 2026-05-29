@@ -158,7 +158,7 @@ export default function Enseignants() {
   const [filters, setFilters] = useState({
     heuresMin: '', heuresMax: '', tauxMin: '', tauxMax: '', salaireMin: '', salaireMax: '',
   })
-  const { show } = useToast()
+  const { show, ToastContainer } = useToast()
 
   const load = async () => {
     setLoading(true)
@@ -226,6 +226,9 @@ export default function Enseignants() {
 
   return (
     <div style={{ padding: '28px 32px', maxWidth: '1440px', margin: '0 auto' }}>
+
+      {/* ═══ TOAST CONTAINER ═══ */}
+      <ToastContainer />
 
       {/* ═══ MODALES (rendues ici pour centrage immédiat) ═══ */}
       {toDelete && (
