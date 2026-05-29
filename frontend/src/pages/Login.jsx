@@ -1,5 +1,6 @@
 /**
  * Page Login / Register — authentification complète
+ * Connexion par email OU nom d'utilisateur + mot de passe (comme GitHub)
  * Design premium avec validation temps réel
  */
 
@@ -25,7 +26,6 @@ function ValidatedField({
 }) {
   const showSuccess = isDirty && isValid && !error
   const showError = isDirty && error
-  const inputType = name.includes('password') ? type : type
 
   return (
     <div className="space-y-2">
@@ -43,7 +43,7 @@ function ValidatedField({
           {showError && (
             <span className="flex items-center gap-1 text-[10px] font-medium" style={{ color: '#ef4444' }}>
               <XCircle size={11} />
-              Invalide
+              {error.length > 25 ? 'Invalide' : error}
             </span>
           )}
         </div>
@@ -54,7 +54,7 @@ function ValidatedField({
           <Icon size={17} />
         </div>
         <input
-          type={inputType}
+          type={type}
           name={name}
           value={value}
           onChange={onChange}
@@ -104,8 +104,13 @@ export default function Login() {
   const [mode, setMode] = useState('login')
   const [step, setStep] = useState(1)
   const [form, setForm] = useState({ 
-    username: '', email: '', password: '', confirmPassword: '',
-    resetCode: '', newPassword: ''
+    login: '',        // ← email OU username (comme GitHub)
+    username: '', 
+    email: '', 
+    password: '', 
+    confirmPassword: '',
+    resetCode: '', 
+    newPassword: ''
   })
   const [errors, setErrors] = useState({})
   const [dirty, setDirty] = useState({})
@@ -122,54 +127,58 @@ export default function Login() {
     const newErrors = {}
     
     if (mode === 'login') {
-      if (dirty.username && !form.username.trim()) {
-        newErrors.username = "Le nom d'utilisateur est requis."
+      if (dirty.login) {
+        if (!form.login.trim()) {
+          newErrors.login = "Veuillez entrer votre email ou nom d'utilisateur."
+        }
       }
-      if (dirty.password && !form.password) {
-        newErrors.password = 'Le mot de passe est requis.'
+      if (dirty.password) {
+        if (!form.password) {
+          newErrors.password = 'Veuillez entrer votre mot de passe.'
+        }
       }
     }
 
     if (mode === 'register') {
       if (dirty.username) {
-        if (!form.username.trim()) newErrors.username = "Le nom d'utilisateur est requis."
+        if (!form.username.trim()) newErrors.username = "Choisissez un nom d'utilisateur."
         else if (form.username.trim().length < 3) newErrors.username = 'Minimum 3 caractères.'
       }
       if (dirty.email) {
-        if (!form.email.trim()) newErrors.email = "L'adresse email est requise."
-        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) newErrors.email = 'Format email invalide.'
+        if (!form.email.trim()) newErrors.email = 'Votre adresse email est requise.'
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) newErrors.email = "Format d'email invalide. Exemple : nom@domaine.com"
       }
       if (dirty.password) {
-        if (!form.password) newErrors.password = 'Le mot de passe est requis.'
+        if (!form.password) newErrors.password = 'Choisissez un mot de passe.'
         else if (form.password.length < 6) newErrors.password = 'Minimum 6 caractères.'
       }
       if (dirty.confirmPassword) {
-        if (!form.confirmPassword) newErrors.confirmPassword = 'Confirmation requise.'
-        else if (form.password !== form.confirmPassword) newErrors.confirmPassword = 'Les mots de passe ne correspondent pas.'
+        if (!form.confirmPassword) newErrors.confirmPassword = 'Confirmez votre mot de passe.'
+        else if (form.password !== form.confirmPassword) newErrors.confirmPassword = 'Les deux mots de passe sont différents.'
       }
     }
 
     if (mode === 'forgot' && step === 1) {
       if (dirty.email) {
-        if (!form.email.trim()) newErrors.email = "L'adresse email est requise."
-        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) newErrors.email = 'Format email invalide.'
+        if (!form.email.trim()) newErrors.email = 'Veuillez entrer votre adresse email.'
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) newErrors.email = "Format d'email invalide."
       }
     }
 
     if (mode === 'forgot' && step === 2) {
       if (dirty.resetCode && !form.resetCode.trim()) {
-        newErrors.resetCode = 'Le code est requis.'
+        newErrors.resetCode = 'Veuillez entrer le code reçu par email.'
       }
     }
 
     if (mode === 'forgot' && step === 3) {
       if (dirty.newPassword) {
-        if (!form.newPassword) newErrors.newPassword = 'Le mot de passe est requis.'
+        if (!form.newPassword) newErrors.newPassword = 'Choisissez un nouveau mot de passe.'
         else if (form.newPassword.length < 6) newErrors.newPassword = 'Minimum 6 caractères.'
       }
       if (dirty.confirmPassword) {
-        if (!form.confirmPassword) newErrors.confirmPassword = 'Confirmation requise.'
-        else if (form.newPassword !== form.confirmPassword) newErrors.confirmPassword = 'Les mots de passe ne correspondent pas.'
+        if (!form.confirmPassword) newErrors.confirmPassword = 'Confirmez votre nouveau mot de passe.'
+        else if (form.newPassword !== form.confirmPassword) newErrors.confirmPassword = 'Les deux mots de passe sont différents.'
       }
     }
 
@@ -193,49 +202,101 @@ export default function Login() {
     setErrors({})
     setDirty({})
     setStep(1)
-    setForm({ username: '', email: '', password: '', confirmPassword: '', resetCode: '', newPassword: '' })
+    setForm({ login: '', username: '', email: '', password: '', confirmPassword: '', resetCode: '', newPassword: '' })
   }
 
   const markAllDirty = () => {
-    if (mode === 'login') setDirty({ username: true, password: true })
+    if (mode === 'login') setDirty({ login: true, password: true })
     if (mode === 'register') setDirty({ username: true, email: true, password: true, confirmPassword: true })
     if (mode === 'forgot' && step === 1) setDirty({ email: true })
     if (mode === 'forgot' && step === 2) setDirty({ resetCode: true })
     if (mode === 'forgot' && step === 3) setDirty({ newPassword: true, confirmPassword: true })
   }
 
-  // ═══ Login ═══
+  // ═══ LOGIN — email OU username + mot de passe ═══
   const handleLogin = async (e) => {
     e.preventDefault()
     markAllDirty()
     if (Object.keys(errors).length > 0) return
 
     setLoading(true)
+    setServerError('')
+    
+    // Détecter si l'utilisateur a entré un email ou un username
+    const loginValue = form.login.trim()
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginValue)
+    
+    const credentials = {
+      password: form.password,
+    }
+    
+    if (isEmail) {
+      credentials.email = loginValue
+    } else {
+      credentials.username = loginValue
+    }
+
     try {
-      await login({ username: form.username.trim(), password: form.password })
+      await login(credentials)
       show('Connexion réussie !', 'success')
       navigate('/dashboard')
     } catch (err) {
+      const status = err.response?.status
       const msg = err.response?.data?.message || ''
-      if (msg.toLowerCase().includes('password') || msg.toLowerCase().includes('mot de passe')) {
-        setServerError('Mot de passe incorrect. Veuillez réessayer.')
-      } else if (msg.toLowerCase().includes('user') || msg.toLowerCase().includes('identifiant') || msg.toLowerCase().includes('utilisateur')) {
-        setServerError("Nom d'utilisateur introuvable. Vérifiez votre identifiant.")
-      } else {
-        setServerError('Identifiants incorrects. Veuillez réessayer.')
+      const msgLower = msg.toLowerCase()
+
+      // ═══ Détection par statut HTTP ═══
+      if (status === 401) {
+        // 401 = Non autorisé → le compte existe mais le mot de passe est faux
+        setServerError('Mot de passe incorrect.')
+        setErrors(prev => ({ ...prev, password: 'Ce mot de passe est incorrect.' }))
+      }
+      else if (status === 404) {
+        // 404 = Non trouvé → aucun compte avec cet email/username
+        setServerError(isEmail 
+          ? "Aucun compte associé à cette adresse email." 
+          : "Aucun compte trouvé avec ce nom d'utilisateur."
+        )
+        setErrors(prev => ({ ...prev, login: isEmail ? 'Adresse email introuvable.' : "Nom d'utilisateur introuvable." }))
+      }
+      else if (status === 403) {
+        setServerError('Votre compte est désactivé. Contactez un administrateur.')
+      }
+      else if (status === 429) {
+        setServerError('Trop de tentatives. Veuillez patienter quelques minutes avant de réessayer.')
+      }
+      
+      // ═══ Détection par message ═══
+      else if (msgLower.includes('password') || msgLower.includes('mot de passe')) {
+        setServerError('Mot de passe incorrect.')
+        setErrors(prev => ({ ...prev, password: 'Ce mot de passe est incorrect.' }))
+      } 
+      else if (msgLower.includes('user') || msgLower.includes('username') || 
+               msgLower.includes('identifiant') || msgLower.includes('utilisateur') ||
+               msgLower.includes('not found') || msgLower.includes('introuvable') ||
+               msgLower.includes("n'existe pas") || msgLower.includes('email')) {
+        setServerError(isEmail 
+          ? "Aucun compte associé à cette adresse email." 
+          : "Aucun compte trouvé avec ce nom d'utilisateur."
+        )
+        setErrors(prev => ({ ...prev, login: isEmail ? 'Adresse email introuvable.' : "Nom d'utilisateur introuvable." }))
+      }
+      else {
+        setServerError(msg || 'Erreur de connexion. Veuillez réessayer.')
       }
     } finally {
       setLoading(false)
     }
   }
 
-  // ═══ Register ═══
+  // ═══ REGISTER ═══
   const handleRegister = async (e) => {
     e.preventDefault()
     markAllDirty()
     if (Object.keys(errors).length > 0) return
 
     setLoading(true)
+    setServerError('')
     try {
       await authAPI.register({
         username: form.username.trim(),
@@ -246,32 +307,43 @@ export default function Login() {
       switchMode('login')
     } catch (err) {
       const msg = err.response?.data?.message || ''
-      if (msg.toLowerCase().includes('email')) {
-        setServerError('Cette adresse email est déjà utilisée.')
-      } else if (msg.toLowerCase().includes('username') || msg.toLowerCase().includes('utilisateur')) {
-        setServerError("Ce nom d'utilisateur est déjà pris.")
+      const msgLower = msg.toLowerCase()
+      
+      if (msgLower.includes('email')) {
+        setServerError('Cette adresse email est déjà utilisée par un autre compte.')
+        setErrors(prev => ({ ...prev, email: 'Email déjà utilisé.' }))
+      } else if (msgLower.includes('username') || msgLower.includes('utilisateur') || msgLower.includes("nom d'utilisateur")) {
+        setServerError("Ce nom d'utilisateur est déjà pris. Choisissez-en un autre.")
+        setErrors(prev => ({ ...prev, username: 'Nom d\'utilisateur déjà pris.' }))
       } else {
-        setServerError(msg || 'Erreur lors de la création du compte.')
+        setServerError(msg || "Erreur lors de la création du compte. Veuillez réessayer.")
       }
     } finally {
       setLoading(false)
     }
   }
 
-  // ═══ Forgot Password ═══
+  // ═══ FORGOT PASSWORD ═══
   const handleForgotPassword = async (e) => {
     e.preventDefault()
     markAllDirty()
     if (Object.keys(errors).length > 0) return
 
     setLoading(true)
+    setServerError('')
     try {
       await authAPI.forgotPassword({ email: form.email.trim() })
       setResetEmail(form.email.trim())
-      show('Code de réinitialisation envoyé par email.', 'success')
+      show('Un code de réinitialisation a été envoyé à votre adresse email.', 'success')
       setStep(2)
     } catch (err) {
-      setServerError(err.response?.data?.message || "Erreur lors de l'envoi du code.")
+      const msg = err.response?.data?.message || ''
+      if (msg.toLowerCase().includes('email') || msg.toLowerCase().includes('introuvable')) {
+        setServerError("Aucun compte associé à cette adresse email.")
+        setErrors(prev => ({ ...prev, email: 'Adresse email introuvable.' }))
+      } else {
+        setServerError(msg || "Erreur lors de l'envoi du code. Veuillez réessayer.")
+      }
     } finally {
       setLoading(false)
     }
@@ -283,12 +355,14 @@ export default function Login() {
     if (Object.keys(errors).length > 0) return
 
     setLoading(true)
+    setServerError('')
     try {
       await authAPI.verifyResetCode({ email: resetEmail, code: form.resetCode.trim() })
       show('Code vérifié avec succès.', 'success')
       setStep(3)
     } catch (err) {
-      setServerError('Code incorrect ou expiré. Veuillez réessayer.')
+      setServerError('Le code est incorrect ou a expiré. Vérifiez et réessayez.')
+      setErrors(prev => ({ ...prev, resetCode: 'Code incorrect.' }))
     } finally {
       setLoading(false)
     }
@@ -300,30 +374,30 @@ export default function Login() {
     if (Object.keys(errors).length > 0) return
 
     setLoading(true)
+    setServerError('')
     try {
       await authAPI.resetPassword({
         email: resetEmail,
         code: form.resetCode.trim(),
         password: form.newPassword
       })
-      show('Mot de passe réinitialisé avec succès !', 'success')
+      show('Votre mot de passe a été réinitialisé avec succès !', 'success')
       switchMode('login')
     } catch (err) {
-      setServerError(err.response?.data?.message || 'Erreur lors de la réinitialisation.')
+      setServerError(err.response?.data?.message || 'Erreur lors de la réinitialisation. Veuillez réessayer.')
     } finally {
       setLoading(false)
     }
   }
 
-  // ═══ Helpers ═══
   const isFieldValid = (name) => dirty[name] && !errors[name] && form[name]?.trim()
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
       <ToastContainer />
 
-      {/* Fond décoratif */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.03]"
+      {/* Fond décoratif subtil */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.02]"
            style={{
              backgroundImage: `radial-gradient(circle at 50% 50%, var(--text-primary) 1px, transparent 1px)`,
              backgroundSize: '40px 40px',
@@ -378,7 +452,7 @@ export default function Login() {
             </button>
           </div>
 
-          {/* Server error */}
+          {/* Server error banner */}
           {serverError && (
             <div className="flex items-center gap-3 px-4 py-3 rounded-xl mb-5" style={{
               background: 'rgba(239,68,68,0.06)',
@@ -389,23 +463,24 @@ export default function Login() {
             </div>
           )}
 
-          {/* ═══ LOGIN ═══ */}
+          {/* ═══ LOGIN — Email ou Username + Mot de passe ═══ */}
           {mode === 'login' && (
             <form onSubmit={handleLogin} className="space-y-4" noValidate>
               <ValidatedField
-                label="Nom d'utilisateur"
-                icon={User}
-                name="username"
-                value={form.username}
+                label="Email ou nom d'utilisateur"
+                icon={AtSign}
+                name="login"
+                value={form.login}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                placeholder="Entrez votre identifiant"
+                placeholder="votre@email.com ou identifiant"
                 autoComplete="username"
                 disabled={loading}
-                error={errors.username}
-                isValid={isFieldValid('username')}
-                isDirty={dirty.username}
+                error={errors.login}
+                isValid={isFieldValid('login')}
+                isDirty={dirty.login}
               />
+
               <ValidatedField
                 label="Mot de passe"
                 icon={Lock}
@@ -422,7 +497,7 @@ export default function Login() {
                 isDirty={dirty.password}
                 rightIcon={showPwd ? <EyeOff size={17} /> : <Eye size={17} />}
                 onRightIconClick={() => setShowPwd(v => !v)}
-                rightIconLabel={showPwd ? 'Cacher' : 'Afficher'}
+                rightIconLabel={showPwd ? 'Cacher le mot de passe' : 'Afficher le mot de passe'}
               />
 
               <div className="flex justify-end">
@@ -433,11 +508,16 @@ export default function Login() {
 
               <button type="submit" disabled={loading} className="btn-primary w-full !py-3 !text-sm !rounded-xl">
                 {loading ? (
-                  <><div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />Connexion...</>
+                  <><div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />Connexion en cours...</>
                 ) : (
                   <><LogIn size={16} />Se connecter</>
                 )}
               </button>
+
+              {/* Indication subtile */}
+              <p className="text-center text-[11px] text-muted">
+                Connectez-vous avec votre <strong>email</strong> ou votre <strong>nom d'utilisateur</strong>
+              </p>
             </form>
           )}
 
@@ -451,7 +531,7 @@ export default function Login() {
                 value={form.username}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                placeholder="Choisissez un identifiant"
+                placeholder="Choisissez un identifiant public"
                 autoComplete="username"
                 disabled={loading}
                 error={errors.username}
@@ -481,7 +561,7 @@ export default function Login() {
                 value={form.password}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                placeholder="Minimum 6 caractères"
+                placeholder="Au moins 6 caractères"
                 autoComplete="new-password"
                 disabled={loading}
                 error={errors.password}
@@ -498,7 +578,7 @@ export default function Login() {
                 value={form.confirmPassword}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                placeholder="Répétez le mot de passe"
+                placeholder="Répétez votre mot de passe"
                 autoComplete="new-password"
                 disabled={loading}
                 error={errors.confirmPassword}
@@ -511,7 +591,7 @@ export default function Login() {
               <button type="submit" disabled={loading} className="btn-primary w-full !py-3 !text-sm !rounded-xl"
                       style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', boxShadow: '0 4px 12px rgba(79,70,229,0.3)' }}>
                 {loading ? (
-                  <><div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />Création...</>
+                  <><div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />Création du compte...</>
                 ) : (
                   <><UserPlus size={16} />Créer mon compte</>
                 )}
@@ -549,7 +629,7 @@ export default function Login() {
                       <Mail size={22} style={{ color: '#0891b2' }} />
                     </div>
                     <h3 className="text-sm font-semibold text-primary mb-1">Mot de passe oublié ?</h3>
-                    <p className="text-xs text-muted">Entrez votre email pour recevoir un code.</p>
+                    <p className="text-xs text-muted">Entrez votre adresse email pour recevoir un code de réinitialisation.</p>
                   </div>
                   <ValidatedField
                     label="Adresse email"
@@ -566,7 +646,7 @@ export default function Login() {
                     isDirty={dirty.email}
                   />
                   <button type="submit" disabled={loading} className="btn-primary w-full !py-3 !text-sm !rounded-xl">
-                    {loading ? <><div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />Envoi...</> : <><Send size={16} />Envoyer le code</>}
+                    {loading ? <><div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />Envoi en cours...</> : <><Send size={16} />Envoyer le code</>}
                   </button>
                 </form>
               )}
@@ -579,7 +659,7 @@ export default function Login() {
                       <Key size={22} style={{ color: '#0891b2' }} />
                     </div>
                     <h3 className="text-sm font-semibold text-primary mb-1">Vérification</h3>
-                    <p className="text-xs text-muted">Code envoyé à <span style={{ color: '#0891b2' }}>{resetEmail}</span></p>
+                    <p className="text-xs text-muted">Un code a été envoyé à <span style={{ color: '#0891b2', fontWeight: 500 }}>{resetEmail}</span></p>
                   </div>
                   <ValidatedField
                     label="Code de réinitialisation"
@@ -588,7 +668,7 @@ export default function Login() {
                     value={form.resetCode}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    placeholder="Entrez le code reçu"
+                    placeholder="Entrez le code à 6 chiffres"
                     disabled={loading}
                     error={errors.resetCode}
                     isValid={isFieldValid('resetCode')}
@@ -608,7 +688,7 @@ export default function Login() {
                       <Lock size={22} style={{ color: '#0891b2' }} />
                     </div>
                     <h3 className="text-sm font-semibold text-primary mb-1">Nouveau mot de passe</h3>
-                    <p className="text-xs text-muted">Choisissez un mot de passe sécurisé.</p>
+                    <p className="text-xs text-muted">Choisissez un mot de passe sécurisé d'au moins 6 caractères.</p>
                   </div>
                   <ValidatedField
                     label="Nouveau mot de passe"
@@ -639,7 +719,7 @@ export default function Login() {
                     isDirty={dirty.confirmPassword}
                   />
                   <button type="submit" disabled={loading} className="btn-primary w-full !py-3 !text-sm !rounded-xl">
-                    {loading ? <><div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />Réinitialisation...</> : <><Save size={16} />Réinitialiser</>}
+                    {loading ? <><div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />Réinitialisation...</> : <><Save size={16} />Réinitialiser le mot de passe</>}
                   </button>
                 </form>
               )}

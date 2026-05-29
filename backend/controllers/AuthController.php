@@ -2,11 +2,12 @@
 /**
  * AuthController
  * Gère l'authentification : connexion, inscription, réinitialisation de mot de passe
+ * Supporte la connexion par email OU nom d'utilisateur (comme GitHub)
  */
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/jwt.php';
-require_once __DIR__ . '/../vendor/autoload.php';  // 🆕 PHPMailer
+require_once __DIR__ . '/../vendor/autoload.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -15,31 +16,74 @@ class AuthController {
 
     /**
      * POST /api/auth/login
-     * Corps : { "username": "...", "password": "..." }
+     * Corps : { "username": "..." } OU { "email": "..." } + { "password": "..." }
+     * 
+     * L'utilisateur peut se connecter avec :
+     * - Son nom d'utilisateur + mot de passe
+     * - Son adresse email + mot de passe
      */
     public static function login(): void {
         $body = json_decode(file_get_contents('php://input'), true);
 
         $username = trim($body['username'] ?? '');
+        $email    = trim($body['email'] ?? '');
         $password = $body['password'] ?? '';
 
-        if (empty($username) || empty($password)) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Identifiant et mot de passe requis.']);
+        // ═══ 1. Vérifier qu'au moins un identifiant est fourni ═══
+        if (empty($username) && empty($email)) {
+            http_response_code(422);
+            echo json_encode([
+                'success' => false, 
+                'message' => 'Veuillez fournir un email ou un nom d\'utilisateur.'
+            ]);
             return;
         }
 
-        $db   = getDB();
-        $stmt = $db->prepare('SELECT id, username, email, password, role FROM users WHERE username = ? LIMIT 1');
-        $stmt->execute([$username]);
+        if (empty($password)) {
+            http_response_code(422);
+            echo json_encode([
+                'success' => false, 
+                'message' => 'Veuillez fournir votre mot de passe.'
+            ]);
+            return;
+        }
+
+        $db = getDB();
+
+        // ═══ 2. Rechercher l'utilisateur par email OU par username ═══
+        if (!empty($email)) {
+            $stmt = $db->prepare('SELECT id, username, email, password, role FROM users WHERE email = ? LIMIT 1');
+            $stmt->execute([$email]);
+        } else {
+            $stmt = $db->prepare('SELECT id, username, email, password, role FROM users WHERE username = ? LIMIT 1');
+            $stmt->execute([$username]);
+        }
+        
         $user = $stmt->fetch();
 
-        if (!$user || !password_verify($password, $user['password'])) {
-            http_response_code(401);
-            echo json_encode(['success' => false, 'message' => 'Identifiant ou mot de passe incorrect.']);
+        // ═══ 3. Compte introuvable → 404 ═══
+        if (!$user) {
+            http_response_code(404);
+            echo json_encode([
+                'success' => false, 
+                'message' => !empty($email) 
+                    ? 'Aucun compte trouvé avec cette adresse email.' 
+                    : 'Aucun compte trouvé avec ce nom d\'utilisateur.'
+            ]);
             return;
         }
 
+        // ═══ 4. Mot de passe incorrect → 401 ═══
+        if (!password_verify($password, $user['password'])) {
+            http_response_code(401);
+            echo json_encode([
+                'success' => false, 
+                'message' => 'Mot de passe incorrect.'
+            ]);
+            return;
+        }
+
+        // ═══ 5. Connexion réussie → 200 ═══
         $token = JWT::encode([
             'sub'      => $user['id'],
             'username' => $user['username'],
@@ -70,12 +114,32 @@ class AuthController {
         $email    = trim($body['email'] ?? '');
         $password = $body['password'] ?? '';
 
-        if (empty($username) || empty($email) || empty($password)) {
-            http_response_code(400);
+        // ═══ Validation champs requis ═══
+        if (empty($username) && empty($email) && empty($password)) {
+            http_response_code(422);
             echo json_encode(['success' => false, 'message' => 'Tous les champs sont obligatoires.']);
             return;
         }
 
+        if (empty($username)) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'message' => 'Le nom d\'utilisateur est obligatoire.']);
+            return;
+        }
+
+        if (empty($email)) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'message' => 'L\'adresse email est obligatoire.']);
+            return;
+        }
+
+        if (empty($password)) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'message' => 'Le mot de passe est obligatoire.']);
+            return;
+        }
+
+        // ═══ Validation format ═══
         if (strlen($username) < 3) {
             http_response_code(422);
             echo json_encode(['success' => false, 'message' => 'Le nom d\'utilisateur doit contenir au moins 3 caractères.']);
@@ -84,7 +148,7 @@ class AuthController {
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             http_response_code(422);
-            echo json_encode(['success' => false, 'message' => 'Adresse email invalide.']);
+            echo json_encode(['success' => false, 'message' => 'Format d\'adresse email invalide.']);
             return;
         }
 
@@ -96,30 +160,38 @@ class AuthController {
 
         $db = getDB();
 
-        $stmt = $db->prepare('SELECT id FROM users WHERE username = ? OR email = ? LIMIT 1');
-        $stmt->execute([$username, $email]);
-
+        // ═══ Vérifier si l'email existe déjà ═══
+        $stmt = $db->prepare('SELECT id FROM users WHERE email = ? LIMIT 1');
+        $stmt->execute([$email]);
         if ($stmt->fetch()) {
             http_response_code(409);
-            echo json_encode(['success' => false, 'message' => 'Ce nom d\'utilisateur ou cet email est déjà utilisé.']);
+            echo json_encode(['success' => false, 'message' => 'Cette adresse email est déjà utilisée par un autre compte.']);
             return;
         }
 
-        $hashedPassword = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
+        // ═══ Vérifier si le username existe déjà ═══
+        $stmt = $db->prepare('SELECT id FROM users WHERE username = ? LIMIT 1');
+        $stmt->execute([$username]);
+        if ($stmt->fetch()) {
+            http_response_code(409);
+            echo json_encode(['success' => false, 'message' => 'Ce nom d\'utilisateur est déjà pris. Choisissez-en un autre.']);
+            return;
+        }
 
+        // ═══ Création du compte ═══
+        $hashedPassword = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
         $stmt = $db->prepare('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, \'user\')');
         $stmt->execute([$username, $email, $hashedPassword]);
 
         echo json_encode([
             'success' => true,
-            'message' => 'Compte créé avec succès !'
+            'message' => 'Compte créé avec succès ! Vous pouvez maintenant vous connecter.'
         ]);
     }
 
     /**
      * POST /api/auth/forgot-password
      * Corps : { "email": "..." }
-     * Envoie un vrai code de réinitialisation par email
      */
     public static function forgotPassword(): void {
         $body = json_decode(file_get_contents('php://input'), true);
@@ -127,7 +199,7 @@ class AuthController {
 
         if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             http_response_code(422);
-            echo json_encode(['success' => false, 'message' => 'Adresse email invalide.']);
+            echo json_encode(['success' => false, 'message' => 'Veuillez fournir une adresse email valide.']);
             return;
         }
 
@@ -137,6 +209,7 @@ class AuthController {
         $stmt->execute([$email]);
         $user = $stmt->fetch();
 
+        // ═══ Pour la sécurité, on ne révèle pas si l'email existe ou non ═══
         if (!$user) {
             echo json_encode([
                 'success' => true,
@@ -152,22 +225,22 @@ class AuthController {
         $stmt = $db->prepare('UPDATE password_resets SET used = 1 WHERE email = ?');
         $stmt->execute([$email]);
 
-        // Sauvegarder le nouveau code (expire dans 15 minutes)
+        // Sauvegarder le nouveau code
         $stmt = $db->prepare(
             'INSERT INTO password_resets (email, code, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 15 MINUTE))'
         );
         $stmt->execute([$email, $code]);
 
-        // ─── ENVOI DU VRAI EMAIL AVEC PHPMAILER ───
+        // Envoi de l'email
         $mailSent = self::sendResetEmail($email, $user['username'], $code);
 
         if ($mailSent) {
             echo json_encode([
                 'success' => true,
-                'message' => 'Code de réinitialisation envoyé par email.'
+                'message' => 'Un code de réinitialisation a été envoyé à votre adresse email.'
             ]);
         } else {
-            // Fallback : afficher le code en développement
+            // Fallback développement
             echo json_encode([
                 'success' => true,
                 'message' => 'Code envoyé (mode debug).',
@@ -226,7 +299,6 @@ class AuthController {
 
     /**
      * POST /api/auth/verify-reset-code
-     * Corps : { "email": "...", "code": "..." }
      */
     public static function verifyResetCode(): void {
         $body = json_decode(file_get_contents('php://input'), true);
@@ -235,7 +307,7 @@ class AuthController {
         $code  = trim($body['code'] ?? '');
 
         if (empty($email) || empty($code)) {
-            http_response_code(400);
+            http_response_code(422);
             echo json_encode(['success' => false, 'message' => 'Email et code requis.']);
             return;
         }
@@ -251,7 +323,7 @@ class AuthController {
 
         if (!$stmt->fetch()) {
             http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Code incorrect ou expiré.']);
+            echo json_encode(['success' => false, 'message' => 'Code incorrect ou expiré. Veuillez réessayer.']);
             return;
         }
 
@@ -263,7 +335,6 @@ class AuthController {
 
     /**
      * POST /api/auth/reset-password
-     * Corps : { "email": "...", "code": "...", "password": "..." }
      */
     public static function resetPassword(): void {
         $body = json_decode(file_get_contents('php://input'), true);
@@ -273,7 +344,7 @@ class AuthController {
         $password = $body['password'] ?? '';
 
         if (empty($email) || empty($code) || empty($password)) {
-            http_response_code(400);
+            http_response_code(422);
             echo json_encode(['success' => false, 'message' => 'Tous les champs sont obligatoires.']);
             return;
         }
@@ -296,7 +367,7 @@ class AuthController {
 
         if (!$reset) {
             http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Code invalide ou expiré.']);
+            echo json_encode(['success' => false, 'message' => 'Code invalide ou expiré. Veuillez réessayer.']);
             return;
         }
 
@@ -309,7 +380,7 @@ class AuthController {
 
         echo json_encode([
             'success' => true,
-            'message' => 'Mot de passe réinitialisé avec succès !'
+            'message' => 'Mot de passe réinitialisé avec succès ! Vous pouvez maintenant vous connecter.'
         ]);
     }
 
