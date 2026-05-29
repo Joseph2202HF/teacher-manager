@@ -1,7 +1,6 @@
 /**
  * Page Liste des enseignants — CRUD complet
  * Design premium aligné sur le design system (index.css)
- * Même niveau de finition que Bilan.jsx
  */
 
 import { useEffect, useState, useMemo } from 'react'
@@ -85,21 +84,17 @@ function SmartFilter({ filters, setFilters, onClose }) {
 
   return (
     <>
-      {/* Overlay avec backdrop blur pour l'effet "fenêtre devant fenêtre" */}
       <div className="fixed inset-0 z-40"
            style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(2px)' }}
            onClick={onClose} />
 
-      {/* Panneau filtre — fond totalement opaque */}
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] z-50 rounded-2xl p-6"
            style={{
              background: 'var(--bg-secondary)',
              border: '1px solid var(--border-color)',
              boxShadow: '0 24px 64px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.2)',
-             animation: 'slideUp 0.25s cubic-bezier(0.16,1,0.3,1)'
            }}>
 
-        {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center"
@@ -129,14 +124,12 @@ function SmartFilter({ filters, setFilters, onClose }) {
           </button>
         </div>
 
-        {/* Champs */}
         <div className="space-y-5">
           <Range label="Nombre d'heures" minKey="heuresMin" maxKey="heuresMax" unit="h"  accent="#4f46e5" />
           <Range label="Taux horaire"    minKey="tauxMin"   maxKey="tauxMax"   unit="Ar" accent="#7c3aed" />
           <Range label="Salaire"         minKey="salaireMin" maxKey="salaireMax" unit="Ar" accent="#0891b2" />
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-2 mt-6 pt-5 border-t" style={{ borderColor: 'var(--border-color)' }}>
           <button onClick={reset} className="btn-secondary flex-1 !py-2.5 !text-xs">
             Réinitialiser
@@ -165,7 +158,7 @@ export default function Enseignants() {
   const [filters, setFilters] = useState({
     heuresMin: '', heuresMax: '', tauxMin: '', tauxMax: '', salaireMin: '', salaireMax: '',
   })
-  const { show, ToastContainer } = useToast()
+  const { show } = useToast()
 
   const load = async () => {
     setLoading(true)
@@ -210,7 +203,7 @@ export default function Enseignants() {
     try {
       await enseignantAPI.delete(toDelete.numEns)
       setList((l) => l.filter((e) => e.numEns !== toDelete.numEns))
-      show(`${toDelete.nom} supprimé avec succès.`)
+      show(`${toDelete.nom} supprimé avec succès.`, 'success')
     } catch { show('Erreur lors de la suppression.', 'error') }
     finally { setDeleting(false); setToDelete(null) }
   }
@@ -225,50 +218,28 @@ export default function Enseignants() {
   const totalHeures  = filtered.reduce((acc, e) => acc + Number(e.nbheures), 0)
   const totalSalaire = filtered.reduce((acc, e) => acc + Number(e.salaire), 0)
 
-  /* Stats cards */
   const stats = [
-    {
-      label: 'Total enseignants',
-      value: filtered.length,
-      suffix: '',
-      icon: Users,
-      tint: '99,102,241',
-      color: '#4f46e5',
-    },
-    {
-      label: 'Total heures',
-      value: totalHeures,
-      suffix: 'h',
-      icon: Clock,
-      tint: '124,58,237',
-      color: '#7c3aed',
-    },
-    {
-      label: 'Masse salariale',
-      value: totalSalaire.toLocaleString('fr'),
-      suffix: 'Ar',
-      icon: Wallet,
-      tint: '8,145,178',
-      color: '#0891b2',
-    },
+    { label: 'Total enseignants', value: filtered.length, suffix: '', icon: Users,    tint: '99,102,241', color: '#4f46e5' },
+    { label: 'Total heures',      value: totalHeures,     suffix: 'h', icon: Clock,    tint: '124,58,237', color: '#7c3aed' },
+    { label: 'Masse salariale',   value: totalSalaire.toLocaleString('fr'), suffix: 'Ar', icon: Wallet, tint: '8,145,178', color: '#0891b2' },
   ]
 
   return (
     <div style={{ padding: '28px 32px', maxWidth: '1440px', margin: '0 auto' }}>
-      <ToastContainer />
+
+      {/* ═══ MODALES (rendues ici pour centrage immédiat) ═══ */}
       {toDelete && (
         <DeleteModal name={toDelete.nom} onConfirm={handleDelete}
                      onCancel={() => setToDelete(null)} loading={deleting} />
       )}
-
-      {/* Filtre modal */}
       {showFilters && (
         <SmartFilter filters={filters} setFilters={setFilters} onClose={() => setShowFilters(false)} />
       )}
 
+      {/* ═══ CONTENU PRINCIPAL ═══ */}
       <div className="space-y-6 stagger-children">
 
-        {/* ═══ Header ═══ */}
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-2xl flex items-center justify-center"
@@ -295,11 +266,9 @@ export default function Enseignants() {
               </p>
             </div>
           </div>
-
           <div className="flex items-center gap-2.5">
             <button onClick={load} disabled={loading}
-                    className="btn-secondary !p-0 w-10 h-10 !rounded-xl disabled:opacity-40"
-                    title="Rafraîchir">
+                    className="btn-secondary !p-0 w-10 h-10 !rounded-xl disabled:opacity-40" title="Rafraîchir">
               <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
             </button>
             <Link to="/enseignants/ajouter" className="btn-primary !py-2.5 !px-4 !text-xs">
@@ -309,14 +278,13 @@ export default function Enseignants() {
           </div>
         </div>
 
-        {/* ═══ Stats cards ═══ */}
+        {/* Stats cards */}
         <div className="grid grid-cols-3 gap-4">
           {stats.map(({ label, value, suffix, icon: Icon, tint, color }, i) => (
             <div key={label} className="card !p-5 relative overflow-hidden group"
                  style={{ animationDelay: `${i * 80}ms`, animationFillMode: 'both' }}>
               <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-40 transition-opacity duration-300 group-hover:opacity-80 pointer-events-none"
                    style={{ background: `radial-gradient(circle, rgba(${tint},0.12), transparent 70%)` }} />
-
               <div className="relative flex items-start justify-between">
                 <div>
                   <p className="text-[11px] uppercase tracking-widest mb-2 font-semibold text-muted">{label}</p>
@@ -326,10 +294,7 @@ export default function Enseignants() {
                   </p>
                 </div>
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                     style={{
-                       background: `rgba(${tint},0.12)`,
-                       border: `1px solid rgba(${tint},0.2)`
-                     }}>
+                     style={{ background: `rgba(${tint},0.12)`, border: `1px solid rgba(${tint},0.2)` }}>
                   <Icon size={16} style={{ color }} />
                 </div>
               </div>
@@ -337,7 +302,7 @@ export default function Enseignants() {
           ))}
         </div>
 
-        {/* ═══ Search & Filters ═══ */}
+        {/* Search & Filters */}
         <div className="flex items-center gap-3 flex-wrap">
           <div className="relative w-80">
             <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
@@ -351,7 +316,6 @@ export default function Enseignants() {
               </button>
             )}
           </div>
-
           <button onClick={() => setShowFilters(true)}
                   className={activeFilterCount === 0
                     ? 'btn-secondary !py-2.5 !px-4 !text-xs'
@@ -364,7 +328,6 @@ export default function Enseignants() {
               </span>
             )}
           </button>
-
           {activeFilterCount > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
               {[
@@ -387,7 +350,7 @@ export default function Enseignants() {
           )}
         </div>
 
-        {/* ═══ Table ═══ */}
+        {/* Table */}
         <div className="card !p-0 overflow-hidden">
           <div className="h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
           <div className="overflow-x-auto">
@@ -395,11 +358,11 @@ export default function Enseignants() {
               <thead>
                 <tr>
                   {[
-                    { key: 'numEns',      label: 'ID',           w: '7%'  },
-                    { key: 'nom',         label: 'Nom complet',  w: '28%' },
-                    { key: 'nbheures',    label: 'Heures',       w: '12%' },
+                    { key: 'numEns', label: 'ID', w: '7%' },
+                    { key: 'nom', label: 'Nom complet', w: '28%' },
+                    { key: 'nbheures', label: 'Heures', w: '12%' },
                     { key: 'tauxhoraire', label: 'Taux horaire', w: '14%' },
-                    { key: 'salaire',     label: 'Salaire',      w: '17%' },
+                    { key: 'salaire', label: 'Salaire', w: '17%' },
                   ].map(({ key, label, w }) => (
                     <th key={key} style={{ width: w }} onClick={() => toggleSort(key)}
                         className="!cursor-pointer select-none hover:!text-[color:var(--text-primary)] transition-colors">
@@ -417,8 +380,7 @@ export default function Enseignants() {
                     <tr key={i}>
                       {[...Array(6)].map((_, j) => (
                         <td key={j}>
-                          <div className="skeleton h-4"
-                               style={{ width: j === 1 ? '160px' : j === 5 ? '180px' : '70px' }} />
+                          <div className="skeleton h-4" style={{ width: j === 1 ? '160px' : j === 5 ? '180px' : '70px' }} />
                         </td>
                       ))}
                     </tr>
@@ -432,10 +394,10 @@ export default function Enseignants() {
                           <Search size={22} className="text-muted" />
                         </div>
                         <p className="text-sm font-medium text-secondary">
-                          {search || activeFilterCount > 0 ? 'Aucun résultat pour ces critères' : 'Aucun enseignant enregistré'}
+                          {search || activeFilterCount > 0 ? 'Aucun résultat' : 'Aucun enseignant enregistré'}
                         </p>
                         <p className="text-xs text-muted">
-                          {search || activeFilterCount > 0 ? 'Essayez de modifier vos filtres' : 'Commencez par ajouter un enseignant'}
+                          {search || activeFilterCount > 0 ? 'Modifiez vos filtres' : 'Ajoutez votre premier enseignant'}
                         </p>
                       </div>
                     </td>
@@ -445,11 +407,7 @@ export default function Enseignants() {
                     <tr key={e.numEns}>
                       <td>
                         <span className="px-2.5 py-1 rounded-md text-xs font-mono font-semibold inline-block"
-                              style={{
-                                background: 'var(--hover-bg)',
-                                border: '1px solid var(--border-color)',
-                                color: 'var(--text-secondary)'
-                              }}>
+                              style={{ background: 'var(--hover-bg)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
                           #{e.numEns}
                         </span>
                       </td>
@@ -458,8 +416,7 @@ export default function Enseignants() {
                           <div className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold uppercase shrink-0"
                                style={{
                                  background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(124,58,237,0.1))',
-                                 border: '1px solid rgba(99,102,241,0.2)',
-                                 color: '#4f46e5'
+                                 border: '1px solid rgba(99,102,241,0.2)', color: '#4f46e5'
                                }}>
                             {e.nom[0]}
                           </div>
@@ -487,23 +444,13 @@ export default function Enseignants() {
                         <div className="flex items-center gap-2">
                           <Link to={`/enseignants/${e.numEns}/modifier`}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:-translate-y-0.5"
-                                style={{
-                                  background: 'rgba(79,70,229,0.1)',
-                                  border: '1px solid rgba(79,70,229,0.2)',
-                                  color: '#4f46e5'
-                                }}>
-                            <Edit2 size={12} />
-                            Modifier
+                                style={{ background: 'rgba(79,70,229,0.1)', border: '1px solid rgba(79,70,229,0.2)', color: '#4f46e5' }}>
+                            <Edit2 size={12} />Modifier
                           </Link>
                           <button onClick={() => setToDelete(e)}
                                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:-translate-y-0.5"
-                                  style={{
-                                    background: 'rgba(225,29,72,0.1)',
-                                    border: '1px solid rgba(225,29,72,0.2)',
-                                    color: '#e11d48'
-                                  }}>
-                            <Trash2 size={12} />
-                            Supprimer
+                                  style={{ background: 'rgba(225,29,72,0.1)', border: '1px solid rgba(225,29,72,0.2)', color: '#e11d48' }}>
+                            <Trash2 size={12} />Supprimer
                           </button>
                         </div>
                       </td>
@@ -513,16 +460,12 @@ export default function Enseignants() {
               </tbody>
             </table>
           </div>
-
-          {/* Footer */}
           {!loading && filtered.length > 0 && (
             <div className="px-5 py-3 border-t flex items-center justify-between"
                  style={{ borderColor: 'var(--border-color)', background: 'var(--surface-bg)' }}>
               <span className="text-[11px] font-medium text-secondary">
                 {filtered.length} enseignant{filtered.length !== 1 ? 's' : ''}
-                {activeFilterCount > 0 && (
-                  <span className="ml-1" style={{ color: '#2563eb' }}>· filtré{filtered.length > 1 ? 's' : ''}</span>
-                )}
+                {activeFilterCount > 0 && <span className="ml-1" style={{ color: '#2563eb' }}>· filtré</span>}
               </span>
               <div className="flex items-center gap-6 text-[11px]">
                 <span className="text-secondary flex items-center gap-1.5">
@@ -531,9 +474,7 @@ export default function Enseignants() {
                 </span>
                 <span className="text-secondary flex items-center gap-1.5">
                   <TrendingUp size={11} style={{ color: '#0891b2' }} />
-                  <span className="font-mono font-bold" style={{ color: '#0891b2' }}>
-                    {totalSalaire.toLocaleString('fr')} Ar
-                  </span>
+                  <span className="font-mono font-bold" style={{ color: '#0891b2' }}>{totalSalaire.toLocaleString('fr')} Ar</span>
                 </span>
               </div>
             </div>

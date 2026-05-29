@@ -87,20 +87,17 @@ export default function EnseignantForm({ mode = 'create' }) {
     const newErrors = {}
     let allValid = true
     
-    if (dirty.nom || form.nom) {
-      const nomError = validateField('nom', form.nom)
-      if (nomError) { newErrors.nom = nomError; allValid = false }
-    } else { allValid = false }
+    // Validation du nom
+    const nomError = validateField('nom', form.nom)
+    if (nomError) { newErrors.nom = nomError; allValid = false }
     
-    if (dirty.nbheures || form.nbheures) {
-      const heuresError = validateField('nbheures', form.nbheures)
-      if (heuresError) { newErrors.nbheures = heuresError; allValid = false }
-    } else { allValid = false }
+    // Validation des heures
+    const heuresError = validateField('nbheures', form.nbheures)
+    if (heuresError) { newErrors.nbheures = heuresError; allValid = false }
     
-    if (dirty.tauxhoraire || form.tauxhoraire) {
-      const tauxError = validateField('tauxhoraire', form.tauxhoraire)
-      if (tauxError) { newErrors.tauxhoraire = tauxError; allValid = false }
-    } else { allValid = false }
+    // Validation du taux horaire
+    const tauxError = validateField('tauxhoraire', form.tauxhoraire)
+    if (tauxError) { newErrors.tauxhoraire = tauxError; allValid = false }
     
     setErrors(newErrors)
     setFormValid(allValid && Object.keys(newErrors).length === 0)
@@ -140,6 +137,23 @@ export default function EnseignantForm({ mode = 'create' }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target
+    
+    // Pour les champs numériques : bloquer les lettres
+    if (name === 'nbheures' || name === 'tauxhoraire') {
+      // Pour nbheures : autorise chiffres et un seul point décimal
+      if (name === 'nbheures') {
+        if (value !== '' && !/^\d*\.?\d{0,1}$/.test(value)) {
+          return // Bloque la saisie invalide
+        }
+      }
+      // Pour tauxhoraire : autorise uniquement les chiffres entiers
+      if (name === 'tauxhoraire') {
+        if (value !== '' && !/^\d+$/.test(value)) {
+          return // Bloque la saisie invalide
+        }
+      }
+    }
+    
     setForm((f) => ({ ...f, [name]: value }))
     if (!dirty[name]) setDirty((d) => ({ ...d, [name]: true }))
   }
@@ -162,23 +176,29 @@ export default function EnseignantForm({ mode = 'create' }) {
     
     if (name === 'nbheures') {
       if (value === '' || value === undefined || value === null) return "Le nombre d'heures est obligatoire."
+      
+      // Détection des lettres
+      if (/[a-zA-Z]/.test(String(value))) return 'Veuillez saisir uniquement des chiffres, pas de lettres.'
+      
       const numValue = parseFloat(value)
       if (isNaN(numValue)) return 'Veuillez saisir une valeur numérique valide.'
       if (numValue < 0) return "Le nombre d'heures ne peut pas être négatif."
       if (numValue === 0) return "Le nombre d'heures doit être supérieur à zéro."
       if (numValue > 9999) return "Le nombre d'heures ne peut dépasser 9 999 heures."
-      if (!/^\d*\.?\d{0,1}$/.test(value)) return 'Veuillez saisir un nombre avec au maximum une décimale.'
       return null
     }
     
     if (name === 'tauxhoraire') {
       if (value === '' || value === undefined || value === null) return 'Le taux horaire est obligatoire.'
+      
+      // Détection des lettres
+      if (/[a-zA-Z]/.test(String(value))) return 'Veuillez saisir uniquement des chiffres, pas de lettres.'
+      
       const numValue = parseFloat(value)
       if (isNaN(numValue)) return 'Veuillez saisir un montant valide.'
       if (numValue < 0) return 'Le taux horaire ne peut pas être négatif.'
       if (numValue === 0) return 'Le taux horaire doit être supérieur à zéro.'
       if (numValue > 9999999) return 'Le taux horaire ne peut dépasser 9 999 999 Ar.'
-      if (!/^\d+$/.test(value)) return 'Veuillez saisir un nombre entier sans décimale.'
       return null
     }
     return null
@@ -198,7 +218,7 @@ export default function EnseignantForm({ mode = 'create' }) {
     
     if (Object.keys(activeErrors).length > 0) {
       setErrors(activeErrors)
-      show('Veuillez corriger les erreurs.', 'error')
+      show('Veuillez corriger les erreurs avant de continuer.', 'error')
       return
     }
 
@@ -208,15 +228,18 @@ export default function EnseignantForm({ mode = 'create' }) {
     try {
       if (mode === 'create') {
         await enseignantAPI.create(payload)
-        show('Enseignant ajouté avec succès', 'success')
-        setForm({ nom: '', nbheures: '', tauxhoraire: '' })
-        setDirty({})
-        setErrors({})
+        show('Enseignant ajouté avec succès !', 'success')
+        // Redirection après un court délai pour que le toast soit visible
+        setTimeout(() => {
+          navigate('/enseignants')
+        }, 800)
       } else {
         await enseignantAPI.update(id, payload)
-        show('Enseignant mis à jour avec succès', 'success')
+        show('Enseignant mis à jour avec succès !', 'success')
+        setTimeout(() => {
+          navigate('/enseignants')
+        }, 800)
       }
-      navigate('/enseignants')
     } catch (err) {
       const apiErrors = err.response?.data?.errors
       if (apiErrors) {
@@ -303,7 +326,7 @@ export default function EnseignantForm({ mode = 'create' }) {
 
             {/* ═══ Carte formulaire ═══ */}
             <div className="card space-y-7">
-              {/* Progression */}
+              {/* ═══ Progression — TOUJOURS visible ═══ */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
@@ -324,7 +347,9 @@ export default function EnseignantForm({ mode = 'create' }) {
                         ? 'linear-gradient(90deg, #10b981, #34d399)'
                         : progressionPercent >= 50
                           ? 'linear-gradient(90deg, #06b6d4, #22d3ee)'
-                          : 'linear-gradient(90deg, #6366f1, #818cf8)',
+                          : progressionPercent >= 1
+                            ? 'linear-gradient(90deg, #6366f1, #818cf8)'
+                            : 'transparent',
                     }}
                   />
                 </div>
@@ -371,6 +396,7 @@ export default function EnseignantForm({ mode = 'create' }) {
                       placeholder="120"
                       min="0"
                       step="0.5"
+                      inputMode="decimal"
                       className={getInputStyle('nbheures') + ' pr-16'}
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-md text-xs font-medium" style={{
@@ -399,6 +425,7 @@ export default function EnseignantForm({ mode = 'create' }) {
                       placeholder="2500"
                       min="0"
                       step="100"
+                      inputMode="numeric"
                       className={getInputStyle('tauxhoraire') + ' pr-14'}
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-md text-xs font-medium" style={{
