@@ -12,6 +12,7 @@ import Enseignants         from './pages/Enseignants'
 import AjouterEnseignant   from './pages/AjouterEnseignant'
 import ModifierEnseignant  from './pages/ModifierEnseignant'
 import Bilan               from './pages/Bilan'
+import Apparence           from './pages/Parametres/Apparence'
 
 export default function App() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
               <Route path="/enseignants/ajouter"          element={<AjouterEnseignant />} />
               <Route path="/enseignants/:id/modifier"     element={<ModifierEnseignant />} />
               <Route path="/bilan"                        element={<Bilan />} />
+              <Route path="/parametres/apparence"         element={<Apparence />} />
             </Route>
           </Route>
 
