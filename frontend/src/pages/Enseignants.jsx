@@ -4,13 +4,13 @@
  */
 
 import { useEffect, useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { enseignantAPI } from '../services/api'
 import { useToast } from '../components/Toast'
 import {
   UserPlus, Edit2, Trash2, Search, RefreshCw,
   ChevronUp, ChevronDown, Users, AlertTriangle, Database,
-  Filter, X, SlidersHorizontal, Clock, Wallet, TrendingUp,
+  Filter, X, SlidersHorizontal, Clock, TrendingUp,
   CheckCircle2
 } from 'lucide-react'
 
@@ -160,7 +160,18 @@ export default function Enseignants() {
     heuresMin: '', heuresMax: '', tauxMin: '', tauxMax: '', salaireMin: '', salaireMax: '',
   })
   const [deleteSuccess, setDeleteSuccess] = useState(null) // nom de l'enseignant supprimé
+  const [updateSuccess, setUpdateSuccess] = useState(null) // nom de l'enseignant mis à jour
   const { show, ToastContainer } = useToast()
+  const location = useLocation()
+
+  // Lire le message de succès transmis depuis EnseignantForm (mode edit)
+  useEffect(() => {
+    if (location.state?.updatedNom) {
+      setUpdateSuccess(location.state.updatedNom)
+      setTimeout(() => setUpdateSuccess(null), 4000)
+      window.history.replaceState({}, '')
+    }
+  }, [])
 
   const load = async () => {
     setLoading(true)
@@ -227,12 +238,6 @@ export default function Enseignants() {
   const totalHeures  = filtered.reduce((acc, e) => acc + Number(e.nbheures), 0)
   const totalSalaire = filtered.reduce((acc, e) => acc + Number(e.salaire), 0)
 
-  const stats = [
-    { label: 'Total enseignants', value: filtered.length, suffix: '', icon: Users,    tint: '99,102,241', color: '#4f46e5' },
-    { label: 'Total heures',      value: totalHeures,     suffix: 'h', icon: Clock,    tint: '124,58,237', color: '#7c3aed' },
-    { label: 'Salaire totale',    value: totalSalaire.toLocaleString('fr'), suffix: 'Ar', icon: Wallet, tint: '8,145,178', color: '#0891b2' },
-  ]
-
   return (
     <div style={{ padding: '28px 32px', maxWidth: '1440px', margin: '0 auto' }}>
 
@@ -288,30 +293,6 @@ export default function Enseignants() {
               Ajouter un enseignant
             </Link>
           </div>
-        </div>
-
-        {/* Stats cards */}
-        <div className="grid grid-cols-3 gap-4">
-          {stats.map(({ label, value, suffix, icon: Icon, tint, color }, i) => (
-            <div key={label} className="card !p-5 relative overflow-hidden group"
-                 style={{ animationDelay: `${i * 80}ms`, animationFillMode: 'both' }}>
-              <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-40 transition-opacity duration-300 group-hover:opacity-80 pointer-events-none"
-                   style={{ background: `radial-gradient(circle, rgba(${tint},0.12), transparent 70%)` }} />
-              <div className="relative flex items-start justify-between">
-                <div>
-                  <p className="text-[11px] uppercase tracking-widest mb-2 font-semibold text-muted">{label}</p>
-                  <p className="text-2xl font-bold font-mono tracking-tight" style={{ color }}>
-                    {value}
-                    <span className="text-sm font-normal opacity-60 ml-0.5 text-muted">{suffix}</span>
-                  </p>
-                </div>
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                     style={{ background: `rgba(${tint},0.12)`, border: `1px solid rgba(${tint},0.2)` }}>
-                  <Icon size={16} style={{ color }} />
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
 
         {/* Search & Filters */}
@@ -485,6 +466,27 @@ export default function Enseignants() {
                     onClick={() => setDeleteSuccess(null)}
                     className="w-5 h-5 rounded-md flex items-center justify-center transition-colors hover:bg-emerald-500/10"
                     style={{ color: '#059669' }}
+                  >
+                    <X size={11} />
+                  </button>
+                </div>
+              )}
+
+              {/* Message de succès mise à jour */}
+              {updateSuccess && (
+                <div className="flex items-center gap-3 px-5 py-3 border-b"
+                     style={{
+                       borderColor: 'rgba(6,182,212,0.2)',
+                       background: 'rgba(6,182,212,0.06)'
+                     }}>
+                  <CheckCircle2 size={15} className="text-cyan-400 shrink-0" />
+                  <p className="text-xs font-medium flex-1" style={{ color: '#0891b2' }}>
+                    <span className="font-semibold">{updateSuccess}</span> a été mis à jour avec succès.
+                  </p>
+                  <button
+                    onClick={() => setUpdateSuccess(null)}
+                    className="w-5 h-5 rounded-md flex items-center justify-center transition-colors hover:bg-cyan-500/10"
+                    style={{ color: '#0891b2' }}
                   >
                     <X size={11} />
                   </button>

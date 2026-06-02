@@ -235,8 +235,7 @@ export default function EnseignantForm({ mode = 'create' }) {
         setTimeout(() => navigate('/enseignants'), 2000)
       } else {
         await enseignantAPI.update(id, payload)
-        setSubmitSuccess('edit')
-        setTimeout(() => navigate('/enseignants'), 2000)
+        navigate('/enseignants', { state: { updatedNom: payload.nom } })
       }
     } catch (err) {
       const apiErrors = err.response?.data?.errors
