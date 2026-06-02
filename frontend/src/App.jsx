@@ -7,7 +7,6 @@ import { AuthProvider } from './context/AuthContext'
 import PrivateRoute        from './components/PrivateRoute'
 import Layout              from './components/Layout'
 import Login               from './pages/Login'
-import Dashboard           from './pages/Dashboard'
 import Enseignants         from './pages/Enseignants'
 import AjouterEnseignant   from './pages/AjouterEnseignant'
 import ModifierEnseignant  from './pages/ModifierEnseignant'
@@ -25,7 +24,6 @@ export default function App() {
           {/* Protégé */}
           <Route element={<PrivateRoute />}>
             <Route element={<Layout />}>
-              <Route path="/dashboard"                    element={<Dashboard />} />
               <Route path="/enseignants"                  element={<Enseignants />} />
               <Route path="/enseignants/ajouter"          element={<AjouterEnseignant />} />
               <Route path="/enseignants/:id/modifier"     element={<ModifierEnseignant />} />
@@ -35,8 +33,8 @@ export default function App() {
           </Route>
 
           {/* Redirect racine */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<Navigate to="/enseignants" replace />} />
+          <Route path="*" element={<Navigate to="/enseignants" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

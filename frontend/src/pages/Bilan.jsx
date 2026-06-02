@@ -113,12 +113,12 @@ export default function Bilan() {
   const bilanData = data ? [
     { name: 'Salaire Minimum',       value: data.salaire_min,   fill: CHART_COLORS.min },
     { name: 'Salaire Maximum',       value: data.salaire_max,   fill: CHART_COLORS.max },
-    { name: 'Masse Salariale Totale', value: data.salaire_total, fill: CHART_COLORS.total },
+    { name: 'Salaire Totale', value: data.salaire_total, fill: CHART_COLORS.total },
   ] : []
 
   const stats = [
     { label: 'Total enseignants',     value: data?.total ?? 0,           suffix: '',   icon: Users,       tint: '99,102,241', color: '#4f46e5' },
-    { label: 'Masse salariale totale', value: fmt(data?.salaire_total),   suffix: 'Ar', icon: Wallet,      tint: '6,182,212',  color: '#0891b2' },
+    { label: 'Salaire  totale', value: fmt(data?.salaire_total),   suffix: 'Ar', icon: Wallet,      tint: '6,182,212',  color: '#0891b2' },
     { label: 'Salaire maximal',       value: fmt(data?.salaire_max),     suffix: 'Ar', icon: TrendingUp,  tint: '16,185,129', color: '#059669', detail: data?.detail?.[0]?.nom },
     { label: 'Salaire minimal',       value: fmt(data?.salaire_min),     suffix: 'Ar', icon: TrendingDown,tint: '225,29,72',  color: '#e11d48', detail: data?.detail?.[data?.detail?.length - 1]?.nom },
   ]

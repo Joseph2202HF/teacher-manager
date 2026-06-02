@@ -10,7 +10,8 @@ import { useToast } from '../components/Toast'
 import {
   UserPlus, Edit2, Trash2, Search, RefreshCw,
   ChevronUp, ChevronDown, Users, AlertTriangle, Database,
-  Filter, X, SlidersHorizontal, Clock, Wallet, TrendingUp
+  Filter, X, SlidersHorizontal, Clock, Wallet, TrendingUp,
+  CheckCircle2
 } from 'lucide-react'
 
 /* ═══════════════════════════════════════════════════════════
@@ -52,7 +53,7 @@ function DeleteModal({ name, onConfirm, onCancel, loading }) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   FILTRE INTELLIGENT — Fond opaque, textes visibles
+   FILTRE INTELLIGENT
    ═══════════════════════════════════════════════════════════ */
 function SmartFilter({ filters, setFilters, onClose }) {
   const [local, setLocal] = useState(filters)
@@ -158,6 +159,7 @@ export default function Enseignants() {
   const [filters, setFilters] = useState({
     heuresMin: '', heuresMax: '', tauxMin: '', tauxMax: '', salaireMin: '', salaireMax: '',
   })
+  const [deleteSuccess, setDeleteSuccess] = useState(null) // nom de l'enseignant supprimé
   const { show, ToastContainer } = useToast()
 
   const load = async () => {
@@ -199,13 +201,20 @@ export default function Enseignants() {
     setSort((s) => ({ key, dir: s.key === key && s.dir === 'asc' ? 'desc' : 'asc' }))
 
   const handleDelete = async () => {
+    const nomSupprime = toDelete.nom
     setDeleting(true)
     try {
       await enseignantAPI.delete(toDelete.numEns)
       setList((l) => l.filter((e) => e.numEns !== toDelete.numEns))
-      show(`${toDelete.nom} supprimé avec succès.`, 'success')
-    } catch { show('Erreur lors de la suppression.', 'error') }
-    finally { setDeleting(false); setToDelete(null) }
+      setDeleteSuccess(nomSupprime)
+      // Effacement automatique du message après 4 secondes
+      setTimeout(() => setDeleteSuccess(null), 4000)
+    } catch {
+      show('Erreur lors de la suppression.', 'error')
+    } finally {
+      setDeleting(false)
+      setToDelete(null)
+    }
   }
 
   const SortIcon = ({ col }) => {
@@ -221,16 +230,16 @@ export default function Enseignants() {
   const stats = [
     { label: 'Total enseignants', value: filtered.length, suffix: '', icon: Users,    tint: '99,102,241', color: '#4f46e5' },
     { label: 'Total heures',      value: totalHeures,     suffix: 'h', icon: Clock,    tint: '124,58,237', color: '#7c3aed' },
-    { label: 'Masse salariale',   value: totalSalaire.toLocaleString('fr'), suffix: 'Ar', icon: Wallet, tint: '8,145,178', color: '#0891b2' },
+    { label: 'Salaire totale',    value: totalSalaire.toLocaleString('fr'), suffix: 'Ar', icon: Wallet, tint: '8,145,178', color: '#0891b2' },
   ]
 
   return (
     <div style={{ padding: '28px 32px', maxWidth: '1440px', margin: '0 auto' }}>
 
-      {/* ═══ TOAST CONTAINER ═══ */}
+      {/* ═══ TOAST CONTAINER (erreurs uniquement) ═══ */}
       <ToastContainer />
 
-      {/* ═══ MODALES (rendues ici pour centrage immédiat) ═══ */}
+      {/* ═══ MODALES ═══ */}
       {toDelete && (
         <DeleteModal name={toDelete.nom} onConfirm={handleDelete}
                      onCancel={() => setToDelete(null)} loading={deleting} />
@@ -361,7 +370,6 @@ export default function Enseignants() {
               <thead>
                 <tr>
                   {[
-                    { key: 'numEns', label: 'ID', w: '7%' },
                     { key: 'nom', label: 'Nom complet', w: '28%' },
                     { key: 'nbheures', label: 'Heures', w: '12%' },
                     { key: 'tauxhoraire', label: 'Taux horaire', w: '14%' },
@@ -408,12 +416,6 @@ export default function Enseignants() {
                 ) : (
                   filtered.map((e) => (
                     <tr key={e.numEns}>
-                      <td>
-                        <span className="px-2.5 py-1 rounded-md text-xs font-mono font-semibold inline-block"
-                              style={{ background: 'var(--hover-bg)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
-                          #{e.numEns}
-                        </span>
-                      </td>
                       <td>
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold uppercase shrink-0"
@@ -463,23 +465,52 @@ export default function Enseignants() {
               </tbody>
             </table>
           </div>
-          {!loading && filtered.length > 0 && (
-            <div className="px-5 py-3 border-t flex items-center justify-between"
-                 style={{ borderColor: 'var(--border-color)', background: 'var(--surface-bg)' }}>
-              <span className="text-[11px] font-medium text-secondary">
-                {filtered.length} enseignant{filtered.length !== 1 ? 's' : ''}
-                {activeFilterCount > 0 && <span className="ml-1" style={{ color: '#2563eb' }}>· filtré</span>}
-              </span>
-              <div className="flex items-center gap-6 text-[11px]">
-                <span className="text-secondary flex items-center gap-1.5">
-                  <Clock size={11} style={{ color: '#4f46e5' }} />
-                  <span className="font-mono font-bold" style={{ color: '#4f46e5' }}>{totalHeures}h</span>
-                </span>
-                <span className="text-secondary flex items-center gap-1.5">
-                  <TrendingUp size={11} style={{ color: '#0891b2' }} />
-                  <span className="font-mono font-bold" style={{ color: '#0891b2' }}>{totalSalaire.toLocaleString('fr')} Ar</span>
-                </span>
-              </div>
+
+          {/* ═══ Footer du tableau ═══ */}
+          {!loading && (
+            <div className="border-t" style={{ borderColor: 'var(--border-color)' }}>
+
+              {/* Message de succès suppression */}
+              {deleteSuccess && (
+                <div className="flex items-center gap-3 px-5 py-3 border-b"
+                     style={{
+                       borderColor: 'rgba(16,185,129,0.2)',
+                       background: 'rgba(16,185,129,0.06)'
+                     }}>
+                  <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+                  <p className="text-xs font-medium flex-1" style={{ color: '#059669' }}>
+                    <span className="font-semibold">{deleteSuccess}</span> a été supprimé avec succès.
+                  </p>
+                  <button
+                    onClick={() => setDeleteSuccess(null)}
+                    className="w-5 h-5 rounded-md flex items-center justify-center transition-colors hover:bg-emerald-500/10"
+                    style={{ color: '#059669' }}
+                  >
+                    <X size={11} />
+                  </button>
+                </div>
+              )}
+
+              {/* Résumé stats */}
+              {filtered.length > 0 && (
+                <div className="px-5 py-3 flex items-center justify-between"
+                     style={{ background: 'var(--surface-bg)' }}>
+                  <span className="text-[11px] font-medium text-secondary">
+                    {filtered.length} enseignant{filtered.length !== 1 ? 's' : ''}
+                    {activeFilterCount > 0 && <span className="ml-1" style={{ color: '#2563eb' }}>· filtré</span>}
+                  </span>
+                  <div className="flex items-center gap-6 text-[11px]">
+                    <span className="text-secondary flex items-center gap-1.5">
+                      <Clock size={11} style={{ color: '#4f46e5' }} />
+                      <span className="font-mono font-bold" style={{ color: '#4f46e5' }}>{totalHeures}h</span>
+                    </span>
+                    <span className="text-secondary flex items-center gap-1.5">
+                      <TrendingUp size={11} style={{ color: '#0891b2' }} />
+                      <span className="font-mono font-bold" style={{ color: '#0891b2' }}>{totalSalaire.toLocaleString('fr')} Ar</span>
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

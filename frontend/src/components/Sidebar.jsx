@@ -12,9 +12,8 @@ import {
 import { useState } from 'react'
 
 const navItems = [
-  { to: '/dashboard',            icon: LayoutDashboard, label: 'Tableau de bord', end: true },
-  { to: '/enseignants',          icon: Users,           label: 'Enseignants',      end: true },
   { to: '/enseignants/ajouter',  icon: UserPlus,        label: 'Ajouter',          end: true },
+  { to: '/enseignants',          icon: Users,           label: 'Enseignants',      end: true },
   { to: '/bilan',                icon: BarChart3,       label: 'Bilan & Stats',    end: true },
 ]
 
@@ -194,21 +193,6 @@ export default function Sidebar() {
           {/* Séparateur */}
           <div className="my-2 border-t" style={{ borderColor: 'var(--border-color)' }} />
 
-          {/* User info */}
-          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl mb-2" 
-            style={{ background: 'var(--surface-bg)' }}>
-            <div className="w-8 h-8 rounded-full bg-indigo/20 border border-indigo/30 flex items-center justify-center text-indigo text-xs font-bold uppercase">
-              {user?.username?.[0] ?? 'U'}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-                {user?.username}
-              </p>
-              <p className="text-[11px] capitalize" style={{ color: 'var(--text-muted)' }}>
-                {user?.role}
-              </p>
-            </div>
-          </div>
 
           {/* Déconnexion */}
           <button 
