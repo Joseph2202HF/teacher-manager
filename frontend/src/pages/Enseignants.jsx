@@ -1,6 +1,6 @@
 /**
  * Page Liste des enseignants — CRUD complet
- * Design premium aligné sur le design system (index.css)
+ * Fix : createdNom + updatedNom affichés dans le footer du tableau
  */
 
 import { useEffect, useState, useMemo } from 'react'
@@ -88,56 +88,37 @@ function SmartFilter({ filters, setFilters, onClose }) {
       <div className="fixed inset-0 z-40"
            style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(2px)' }}
            onClick={onClose} />
-
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] z-50 rounded-2xl p-6"
            style={{
              background: 'var(--bg-secondary)',
              border: '1px solid var(--border-color)',
              boxShadow: '0 24px 64px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.2)',
            }}>
-
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center"
-                 style={{
-                   background: 'rgba(79,70,229,0.12)',
-                   border: '1px solid rgba(79,70,229,0.2)'
-                 }}>
+                 style={{ background: 'rgba(79,70,229,0.12)', border: '1px solid rgba(79,70,229,0.2)' }}>
               <SlidersHorizontal size={16} style={{ color: '#4f46e5' }} />
             </div>
             <div>
-              <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                Filtres avancés
-              </h3>
-              <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                Affinez votre recherche
-              </p>
+              <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Filtres avancés</h3>
+              <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Affinez votre recherche</p>
             </div>
           </div>
           <button onClick={onClose}
                   className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
-                  style={{
-                    color: 'var(--text-secondary)',
-                    background: 'var(--hover-bg)',
-                    border: '1px solid var(--border-color)'
-                  }}>
+                  style={{ color: 'var(--text-secondary)', background: 'var(--hover-bg)', border: '1px solid var(--border-color)' }}>
             <X size={14} />
           </button>
         </div>
-
         <div className="space-y-5">
           <Range label="Nombre d'heures" minKey="heuresMin" maxKey="heuresMax" unit="h"  accent="#4f46e5" />
           <Range label="Taux horaire"    minKey="tauxMin"   maxKey="tauxMax"   unit="Ar" accent="#7c3aed" />
           <Range label="Salaire"         minKey="salaireMin" maxKey="salaireMax" unit="Ar" accent="#0891b2" />
         </div>
-
         <div className="flex items-center gap-2 mt-6 pt-5 border-t" style={{ borderColor: 'var(--border-color)' }}>
-          <button onClick={reset} className="btn-secondary flex-1 !py-2.5 !text-xs">
-            Réinitialiser
-          </button>
-          <button onClick={apply} className="btn-primary flex-1 !py-2.5 !text-xs">
-            Appliquer les filtres
-          </button>
+          <button onClick={reset} className="btn-secondary flex-1 !py-2.5 !text-xs">Réinitialiser</button>
+          <button onClick={apply} className="btn-primary flex-1 !py-2.5 !text-xs">Appliquer les filtres</button>
         </div>
       </div>
     </>
@@ -159,16 +140,25 @@ export default function Enseignants() {
   const [filters, setFilters] = useState({
     heuresMin: '', heuresMax: '', tauxMin: '', tauxMax: '', salaireMin: '', salaireMax: '',
   })
-  const [deleteSuccess, setDeleteSuccess] = useState(null) // nom de l'enseignant supprimé
-  const [updateSuccess, setUpdateSuccess] = useState(null) // nom de l'enseignant mis à jour
+
+  // États pour les bandeaux de succès dans le footer du tableau
+  const [deleteSuccess, setDeleteSuccess] = useState(null) // nom supprimé
+  const [updateSuccess, setUpdateSuccess] = useState(null) // nom mis à jour
+  const [createSuccess, setCreateSuccess] = useState(null) // nom ajouté
+
   const { show, ToastContainer } = useToast()
   const location = useLocation()
 
-  // Lire le message de succès transmis depuis EnseignantForm (mode edit)
+  /* ── Lire le state transmis depuis EnseignantForm (create & edit) ── */
   useEffect(() => {
     if (location.state?.updatedNom) {
       setUpdateSuccess(location.state.updatedNom)
       setTimeout(() => setUpdateSuccess(null), 4000)
+      window.history.replaceState({}, '')
+    }
+    if (location.state?.createdNom) {
+      setCreateSuccess(location.state.createdNom)
+      setTimeout(() => setCreateSuccess(null), 4000)
       window.history.replaceState({}, '')
     }
   }, [])
@@ -199,7 +189,6 @@ export default function Enseignants() {
     if (filters.tauxMax    !== '') r = r.filter(e => num(e.tauxhoraire) <= num(filters.tauxMax))
     if (filters.salaireMin !== '') r = r.filter(e => num(e.salaire)     >= num(filters.salaireMin))
     if (filters.salaireMax !== '') r = r.filter(e => num(e.salaire)     <= num(filters.salaireMax))
-
     r.sort((a, b) => {
       let av = a[sort.key], bv = b[sort.key]
       if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase() }
@@ -218,7 +207,6 @@ export default function Enseignants() {
       await enseignantAPI.delete(toDelete.numEns)
       setList((l) => l.filter((e) => e.numEns !== toDelete.numEns))
       setDeleteSuccess(nomSupprime)
-      // Effacement automatique du message après 4 secondes
       setTimeout(() => setDeleteSuccess(null), 4000)
     } catch {
       show('Erreur lors de la suppression.', 'error')
@@ -241,10 +229,8 @@ export default function Enseignants() {
   return (
     <div style={{ padding: '28px 32px', maxWidth: '1440px', margin: '0 auto' }}>
 
-      {/* ═══ TOAST CONTAINER (erreurs uniquement) ═══ */}
       <ToastContainer />
 
-      {/* ═══ MODALES ═══ */}
       {toDelete && (
         <DeleteModal name={toDelete.nom} onConfirm={handleDelete}
                      onCancel={() => setToDelete(null)} loading={deleting} />
@@ -253,10 +239,9 @@ export default function Enseignants() {
         <SmartFilter filters={filters} setFilters={setFilters} onClose={() => setShowFilters(false)} />
       )}
 
-      {/* ═══ CONTENU PRINCIPAL ═══ */}
       <div className="space-y-6 stagger-children">
 
-        {/* Header */}
+        {/* ── Header ── */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-2xl flex items-center justify-center"
@@ -295,7 +280,7 @@ export default function Enseignants() {
           </div>
         </div>
 
-        {/* Search & Filters */}
+        {/* ── Search & Filters ── */}
         <div className="flex items-center gap-3 flex-wrap">
           <div className="relative w-80">
             <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
@@ -324,10 +309,10 @@ export default function Enseignants() {
           {activeFilterCount > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
               {[
-                ['heuresMin',  `Heures ≥ ${filters.heuresMin}h`,                       'indigo'],
-                ['heuresMax',  `Heures ≤ ${filters.heuresMax}h`,                       'indigo'],
-                ['tauxMin',    `Taux ≥ ${Number(filters.tauxMin).toLocaleString()} Ar`, 'indigo'],
-                ['tauxMax',    `Taux ≤ ${Number(filters.tauxMax).toLocaleString()} Ar`, 'indigo'],
+                ['heuresMin',  `Heures ≥ ${filters.heuresMin}h`,                        'indigo'],
+                ['heuresMax',  `Heures ≤ ${filters.heuresMax}h`,                        'indigo'],
+                ['tauxMin',    `Taux ≥ ${Number(filters.tauxMin).toLocaleString()} Ar`,  'indigo'],
+                ['tauxMax',    `Taux ≤ ${Number(filters.tauxMax).toLocaleString()} Ar`,  'indigo'],
                 ['salaireMin', `Salaire ≥ ${Number(filters.salaireMin).toLocaleString()} Ar`, 'cyan'],
                 ['salaireMax', `Salaire ≤ ${Number(filters.salaireMax).toLocaleString()} Ar`, 'cyan'],
               ].filter(([k]) => filters[k]).map(([k, label, variant]) => (
@@ -343,7 +328,7 @@ export default function Enseignants() {
           )}
         </div>
 
-        {/* Table */}
+        {/* ── Tableau ── */}
         <div className="card !p-0 overflow-hidden">
           <div className="h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
           <div className="overflow-x-auto">
@@ -351,10 +336,10 @@ export default function Enseignants() {
               <thead>
                 <tr>
                   {[
-                    { key: 'nom', label: 'Nom complet', w: '28%' },
-                    { key: 'nbheures', label: 'Heures', w: '12%' },
-                    { key: 'tauxhoraire', label: 'Taux horaire', w: '14%' },
-                    { key: 'salaire', label: 'Salaire', w: '17%' },
+                    { key: 'nom',        label: 'Nom complet',  w: '28%' },
+                    { key: 'nbheures',   label: 'Heures',       w: '12%' },
+                    { key: 'tauxhoraire',label: 'Taux horaire', w: '14%' },
+                    { key: 'salaire',    label: 'Salaire',      w: '17%' },
                   ].map(({ key, label, w }) => (
                     <th key={key} style={{ width: w }} onClick={() => toggleSort(key)}
                         className="!cursor-pointer select-none hover:!text-[color:var(--text-primary)] transition-colors">
@@ -370,16 +355,16 @@ export default function Enseignants() {
                 {loading ? (
                   [...Array(6)].map((_, i) => (
                     <tr key={i}>
-                      {[...Array(6)].map((_, j) => (
+                      {[...Array(5)].map((_, j) => (
                         <td key={j}>
-                          <div className="skeleton h-4" style={{ width: j === 1 ? '160px' : j === 5 ? '180px' : '70px' }} />
+                          <div className="skeleton h-4" style={{ width: j === 0 ? '160px' : j === 4 ? '180px' : '70px' }} />
                         </td>
                       ))}
                     </tr>
                   ))
                 ) : filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="!py-16 text-center">
+                    <td colSpan={5} className="!py-16 text-center">
                       <div className="flex flex-col items-center gap-3">
                         <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
                              style={{ background: 'var(--hover-bg)', border: '1px solid var(--border-color)' }}>
@@ -447,47 +432,53 @@ export default function Enseignants() {
             </table>
           </div>
 
-          {/* ═══ Footer du tableau ═══ */}
+          {/* ── Footer du tableau ── */}
           {!loading && (
             <div className="border-t" style={{ borderColor: 'var(--border-color)' }}>
 
-              {/* Message de succès suppression */}
-              {deleteSuccess && (
+              {/* Bandeau : ajout réussi (vert) */}
+              {createSuccess && (
                 <div className="flex items-center gap-3 px-5 py-3 border-b"
-                     style={{
-                       borderColor: 'rgba(16,185,129,0.2)',
-                       background: 'rgba(16,185,129,0.06)'
-                     }}>
+                     style={{ borderColor: 'rgba(16,185,129,0.2)', background: 'rgba(16,185,129,0.06)' }}>
                   <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
                   <p className="text-xs font-medium flex-1" style={{ color: '#059669' }}>
-                    <span className="font-semibold">{deleteSuccess}</span> a été supprimé avec succès.
+                    <span className="font-semibold">{createSuccess}</span> a été ajouté avec succès.
                   </p>
-                  <button
-                    onClick={() => setDeleteSuccess(null)}
-                    className="w-5 h-5 rounded-md flex items-center justify-center transition-colors hover:bg-emerald-500/10"
-                    style={{ color: '#059669' }}
-                  >
+                  <button onClick={() => setCreateSuccess(null)}
+                          className="w-5 h-5 rounded-md flex items-center justify-center transition-colors hover:bg-emerald-500/10"
+                          style={{ color: '#059669' }}>
                     <X size={11} />
                   </button>
                 </div>
               )}
 
-              {/* Message de succès mise à jour */}
+              {/* Bandeau : mise à jour réussie (cyan) */}
               {updateSuccess && (
                 <div className="flex items-center gap-3 px-5 py-3 border-b"
-                     style={{
-                       borderColor: 'rgba(6,182,212,0.2)',
-                       background: 'rgba(6,182,212,0.06)'
-                     }}>
+                     style={{ borderColor: 'rgba(6,182,212,0.2)', background: 'rgba(6,182,212,0.06)' }}>
                   <CheckCircle2 size={15} className="text-cyan-400 shrink-0" />
                   <p className="text-xs font-medium flex-1" style={{ color: '#0891b2' }}>
                     <span className="font-semibold">{updateSuccess}</span> a été mis à jour avec succès.
                   </p>
-                  <button
-                    onClick={() => setUpdateSuccess(null)}
-                    className="w-5 h-5 rounded-md flex items-center justify-center transition-colors hover:bg-cyan-500/10"
-                    style={{ color: '#0891b2' }}
-                  >
+                  <button onClick={() => setUpdateSuccess(null)}
+                          className="w-5 h-5 rounded-md flex items-center justify-center transition-colors hover:bg-cyan-500/10"
+                          style={{ color: '#0891b2' }}>
+                    <X size={11} />
+                  </button>
+                </div>
+              )}
+
+              {/* Bandeau : suppression réussie (rouge doux) */}
+              {deleteSuccess && (
+                <div className="flex items-center gap-3 px-5 py-3 border-b"
+                     style={{ borderColor: 'rgba(225,29,72,0.15)', background: 'rgba(225,29,72,0.05)' }}>
+                  <CheckCircle2 size={15} style={{ color: '#e11d48', flexShrink: 0 }} />
+                  <p className="text-xs font-medium flex-1" style={{ color: '#e11d48' }}>
+                    <span className="font-semibold">{deleteSuccess}</span> a été supprimé avec succès.
+                  </p>
+                  <button onClick={() => setDeleteSuccess(null)}
+                          className="w-5 h-5 rounded-md flex items-center justify-center transition-colors"
+                          style={{ color: '#e11d48' }}>
                     <X size={11} />
                   </button>
                 </div>
