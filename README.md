@@ -66,13 +66,18 @@ Le salaire d'un enseignant est calculé automatiquement à partir du nombre d'he
 ## Modules principaux
 
 * Authentification
-* Tableau de bord
 * Gestion des enseignants
 * Statistiques et rapports
 
-## Captures d'écran
+## Gestion des enseignants
+![Page de connexion](screenshots/login.png)
 
-Ajoutez ici les captures d'écran de l'application.
+## Gestion des enseignants
+![Liste des enseignants](screenshots/ens.png)
+
+##Statistiques et rapports
+![Statistiques et rapports](screenshots/stats.png)
+
 
 ## Auteur
 
